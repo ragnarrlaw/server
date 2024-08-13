@@ -1,10 +1,11 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
+
+/*
+    Limit this to a single call, running the server
+*/
 
 func main() {
-  fmt.Println("Hello, world!")
+	fmt.Println("Hello, World!")
 }
-
