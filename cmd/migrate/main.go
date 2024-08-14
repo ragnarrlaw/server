@@ -48,35 +48,39 @@ func main() {
 
 	// Run migration script to create tables
 	createTablesSQL := `
-    CREATE TABLE IF NOT EXISTS users (
-        id UUID PRIMARY KEY,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        first_name VARCHAR(50) NOT NULL,
-        last_name VARCHAR(50) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        password VARCHAR(100) NOT NULL
-    );
+    -- Create the users table
+	CREATE TABLE IF NOT EXISTS users (
+    	id UUID PRIMARY KEY,
+    	username VARCHAR(50) UNIQUE NOT NULL,
+    	first_name VARCHAR(50) NOT NULL,
+    	last_name VARCHAR(50) NOT NULL,
+    	email VARCHAR(100) UNIQUE NOT NULL,
+    	password VARCHAR(100) NOT NULL
+	);
 
-    CREATE TABLE IF NOT EXISTS auth_tokens (
-        id UUID PRIMARY KEY,
-        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-        refresh_token VARCHAR(255) NOT NULL
-    );
+	-- Create the auth_tokens table
+	CREATE TABLE IF NOT EXISTS auth_tokens (
+    	id UUID PRIMARY KEY,
+    	user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    	refresh_token VARCHAR(255) NOT NULL
+	);
 
-    CREATE TABLE IF NOT EXISTS stores (
-        id UUID PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        location JSONB NOT NULL
-    );
+	-- Create the stores table
+	CREATE TABLE IF NOT EXISTS stores (
+    	id UUID PRIMARY KEY,
+    	name VARCHAR(100) NOT NULL,
+    	location JSONB NOT NULL
+	);
 
-    CREATE TABLE IF NOT EXISTS products (
-        id UUID PRIMARY KEY,
-        store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
-        name VARCHAR(100) NOT NULL,
-        quantity INT NOT NULL,
-        unit VARCHAR(20) NOT NULL,
-        price NUMERIC(10,2) NOT NULL
-    );
+	-- Create the products table
+	CREATE TABLE IF NOT EXISTS products (
+    	id UUID PRIMARY KEY,
+    	store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
+    	name VARCHAR(100) NOT NULL,
+    	quantity INT NOT NULL,
+    	unit VARCHAR(20) NOT NULL,
+    	price NUMERIC(10, 2) NOT NULL
+	);
     `
 
 	_, err = dbConn.Exec(context.Background(), createTablesSQL)

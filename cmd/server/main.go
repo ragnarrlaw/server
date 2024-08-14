@@ -11,7 +11,7 @@ import (
 */
 
 func main() {
-  fmt.Println(">>>>Proc_Server Serve>>>>")
-  server := server.NewServer(":9999")
-  server.Run()
+	fmt.Println(">>>>Proc_Server Serve>>>>")
+	server := server.NewServer(":9999")
+	server.Run()
 }
