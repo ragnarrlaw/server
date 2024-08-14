@@ -48,7 +48,7 @@ func (s *Server) Run() {
   routerV1 := http.NewServeMux()
   routerV1.Handle("/api/v1/", http.StripPrefix("/api/v1", router))
 
-  use := middleware.Use(middleware.LogginMiddleware,)
+  use := middleware.Use(middleware.LoggingMiddleware,)
 
 	server := http.Server{
 		Addr:    s.address,
