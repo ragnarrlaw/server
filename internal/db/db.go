@@ -35,7 +35,7 @@ func NewStorage(config StorageConfig) (*Storage, error) {
 	}, nil
 }
 
-func (db *Storage) GetRow(ctx context.Context, sql string, args []interface{}, dest ...interface{}) error {
+func (db *Storage) GetRow(ctx context.Context, sql string, args []interface{}, dest []interface{}) error {
 	row := db.pool.QueryRow(ctx, sql, args...)
 	err := row.Scan(dest...)
 	if err != nil {
