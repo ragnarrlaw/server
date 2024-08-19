@@ -1,9 +1,9 @@
 build_server:
-	@go build -o bin/server ./cmd/server/main.go
+	@go build -o bin/api ./cmd/api/main.go
 
-run_server:
-	@go build -o bin/server ./cmd/server/main.go
-	@./bin/server
+run_api:
+	@go build -o bin/api ./cmd/api/main.go
+	@./bin/api
 
 build_migrate:
 	@go build -o bin/migrate ./cmd/migrate/main.go
