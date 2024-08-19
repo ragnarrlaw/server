@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fatih/color"
+	"github.com/rs/cors"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -41,4 +42,13 @@ func LogRequestDetailsMiddleware(next http.Handler) http.Handler {
 		log.Printf("%s\t%s\t%s\n", clientIP, coloredMethod, endpoint)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func CorsMiddleware(next http.Handler) http.Handler {
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+		// AllowCredentials: false, // set this up later
+	})
+	return c.Handler(next)
 }
