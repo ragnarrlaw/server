@@ -49,9 +49,9 @@ func (us *UserService) AddUserHandler(w http.ResponseWriter, r *http.Request) {
 			if b, err := json.Marshal(user); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			} else {
-				w.Write(b)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusCreated)
+				w.Write(b)
 			}
 		}
 	}
