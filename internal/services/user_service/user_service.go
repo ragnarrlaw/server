@@ -62,6 +62,23 @@ func (us *UserService) RemoveUserHandler(w http.ResponseWriter, r *http.Request)
 
 func (us *UserService) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {}
 
-func (us *UserService) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {}
+func (us *UserService) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	users, err := us.userRepository.GetAll(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if b, err := json.Marshal(users); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(b)
+	}
+}
 
 func (us *UserService) GetUserHandler(w http.ResponseWriter, r *http.Request) {}
