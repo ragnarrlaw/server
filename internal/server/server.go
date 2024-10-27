@@ -12,6 +12,8 @@ import (
 	"github.com/raganrrlaw/server/internal/config"
 	database "github.com/raganrrlaw/server/internal/db"
 	"github.com/raganrrlaw/server/internal/middleware"
+	authservice "github.com/raganrrlaw/server/internal/services/auth_service"
+	authrepository "github.com/raganrrlaw/server/internal/services/auth_service/auth_repository"
 	publicservice "github.com/raganrrlaw/server/internal/services/public_service"
 	userservice "github.com/raganrrlaw/server/internal/services/user_service"
 	userrepository "github.com/raganrrlaw/server/internal/services/user_service/user_repository"
@@ -58,6 +60,12 @@ func (s *Server) Run() {
 	// initialize the user services
 	userService := userservice.NewUserService(userRepo)
 	userService.RegisterRoutes(router)
+
+	// initialize the auth services
+	authRepo := authrepository.NewAuthRepo(s.storage)
+
+	authService := authservice.NewAuthService(authRepo, userRepo)
+	authService.RegisterRoutes(router)
 
 	// initialize the public services here
 	publicservice.RegisterRoutes(router)
