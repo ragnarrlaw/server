@@ -19,8 +19,8 @@ func ErrorHandler(w http.ResponseWriter, err error, statusCode int, message stri
 	} else {
 		log.Printf("Error in %s: %v\n", message, err)
 	}
-  /**
-    TODO: Make the response a JSON response
-  */
+	/**
+	  TODO: Make the response a JSON response
+	*/
 	http.Error(w, message, statusCode)
 }

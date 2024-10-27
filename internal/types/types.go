@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
-  "github.com/google/uuid"
+	"github.com/google/uuid"
 )
 
 // contextKey is a type used for context keys to avoid conflicts
@@ -18,12 +18,12 @@ const (
 
 type User struct {
 	Id            uuid.UUID `json:"id" db:"id"`
-	Username      string `json:"username" db:"username"`
-	FirstName     string `json:"firstName" db:"first_name"`
-	LastName      string `json:"lastName" db:"last_name"`
-	Email         string `json:"email" db:"email"`
-	ContactNumber string `json:"contactNumber" db:"contact_number"`
-	Password      string `json:"password" db:"password_digest"`
+	Username      string    `json:"username" db:"username"`
+	FirstName     string    `json:"firstName" db:"first_name"`
+	LastName      string    `json:"lastName" db:"last_name"`
+	Email         string    `json:"email" db:"email"`
+	ContactNumber string    `json:"contactNumber" db:"contact_number"`
+	Password      string    `json:"password" db:"password_digest"`
 }
 
 func (u *User) String() string {
