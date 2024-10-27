@@ -2,7 +2,9 @@ package userrepository
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/google/uuid"
 	database "github.com/raganrrlaw/server/internal/db"
 	"github.com/raganrrlaw/server/internal/types"
 )
@@ -10,6 +12,7 @@ import (
 type UserRepository interface {
 	Add(context.Context, *types.UserSignUpPayload) (*types.User, error)
 	GetById(context.Context, string) (*types.User, error)
+	GetBy(context.Context, string, any) (*types.User, error)
 	GetAll(context.Context) (*[]types.User, error)
 	Remove(context.Context, []string) error
 	Update(context.Context, string, *types.UserUpdatePayload) (*types.User, error)
@@ -78,6 +81,29 @@ func (repo *UserRepo) GetById(ctx context.Context, id string) (*types.User, erro
 	return &user, nil
 }
 
+func (repo *UserRepo) GetBy(ctx context.Context, field string, value any) (*types.User, error) {
+	query := fmt.Sprintf("SELECT id, username, first_name, last_name, email, contact_number, password_digest FROM users WHERE %s = $1", field)
+	var user types.User
+	err := repo.storage.GetRow(
+		ctx,
+		query,
+		[]interface{}{value},
+		[]interface{}{
+			&user.Id,
+			&user.Username,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.ContactNumber,
+			&user.Password,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (repo *UserRepo) GetAll(ctx context.Context) (*[]types.User, error) {
 	query := "SELECT id, username, first_name, last_name, email, contact_number, password_digest FROM users"
 	rows, err := repo.storage.GetRows(ctx, query)
@@ -88,7 +114,7 @@ func (repo *UserRepo) GetAll(ctx context.Context) (*[]types.User, error) {
 	var users []types.User
 	for _, row := range rows {
 		user := types.User{
-			Id:            row["id"].(string),
+			Id:            row["id"].(uuid.UUID),
 			Username:      row["username"].(string),
 			FirstName:     row["first_name"].(string),
 			LastName:      row["last_name"].(string),
