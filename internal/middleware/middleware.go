@@ -37,7 +37,7 @@ func LogRequestDetailsMiddleware(next http.Handler) http.Handler {
 			coloredMethod = color.New(color.BgGreen, color.FgBlack).Sprint(method)
 		case http.MethodPost:
 			coloredMethod = color.New(color.BgBlue, color.FgWhite).Sprint(method)
-		case http.MethodPut:
+		case http.MethodPatch:
 			coloredMethod = color.New(color.BgYellow, color.FgBlack).Sprint(method)
 		case http.MethodDelete:
 			coloredMethod = color.New(color.BgRed, color.FgWhite).Sprint(method)
