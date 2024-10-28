@@ -34,13 +34,15 @@ func (usp *UserSignUpPayload) String() string {
 	return fmt.Sprintf("UserSignUpPayload: { Username: %s, FirstName: %s, LastName: %s, Email: %s, ContactNumber: %s, Password: %s, RePassword: %s }", usp.Username, usp.FirstName, usp.LastName, usp.Email, usp.ContactNumber, usp.Password, usp.RePassword)
 }
 
-/** 
-  Password updates, and email, and contact number updates are handled by the authentication services
+/*
+*
+
+	Password updates, and email, and contact number updates are handled by the authentication services
 */
 type UserUpdatePayload struct {
-	Username      string `json:"username"`
-	FirstName     string `json:"firstName"`
-	LastName      string `json:"lastName"`
+	Username  string `json:"username"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
 	// ProfilePic    string `json:"profile_pic"` // this should be a file
 }
 

@@ -19,10 +19,10 @@ type StoreUpdatePayload struct{}
 
 type Store struct {
 	Id                 uuid.UUID `json:"id" db:"id"`
-	StoreName          string `json:"store_name" db:"store_name"`
-	StoreAddress       string `json:"store_address" db:"store_address"`
-	StoreEmail         string `json:"store_email" db:"store_email"`
-	StoreContactNumber string `json:"store_contact_number" db:"store_contact_number"`
-	Password           string `json:"password_digest" db:"password_digest"`
-	StoreLocation      string `json:"store_location" db:"store_location"`
+	StoreName          string    `json:"store_name" db:"store_name"`
+	StoreAddress       string    `json:"store_address" db:"store_address"`
+	StoreEmail         string    `json:"store_email" db:"store_email"`
+	StoreContactNumber string    `json:"store_contact_number" db:"store_contact_number"`
+	Password           string    `json:"password_digest" db:"password_digest"`
+	StoreLocation      string    `json:"store_location" db:"store_location"`
 }

@@ -36,11 +36,10 @@ func (tc *TokenClaims) String() string {
 
 type AuthToken struct {
 	Id     uuid.UUID `json:"id"`
-	UserId string `json:"user_id"`
-	Token  string `json:"token"`
+	UserId string    `json:"user_id"`
+	Token  string    `json:"token"`
 }
 
 func (at *AuthToken) String() string {
 	return fmt.Sprintf("AuthToken: { Id: %s, UserId: %s, Token: %s }", at.Id, at.UserId, at.Token)
 }
-
