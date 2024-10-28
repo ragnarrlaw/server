@@ -137,7 +137,7 @@ func (repo *UserRepo) Remove(ctx context.Context, ids []string) error {
 }
 
 func (repo *UserRepo) Update(ctx context.Context, id string, u *types.UserUpdatePayload) (*types.User, error) {
-	query := "UPDATE users SET username = $1, first_name = $2, last_name = $3, email = $4, contact_number = $5, password_digest = $6 WHERE id = $7 RETURNING id, username, first_name, last_name, email, contact_number, password_digest"
+	query := "UPDATE users SET username = $1, first_name = $2, last_name = $3 WHERE id = $4 RETURNING id, username, first_name, last_name, email, contact_number"
 	var user types.User
 	err := repo.storage.GetRow(
 		ctx,
@@ -146,9 +146,6 @@ func (repo *UserRepo) Update(ctx context.Context, id string, u *types.UserUpdate
 			u.Username,
 			u.FirstName,
 			u.LastName,
-			u.Email,
-			u.ContactNumber,
-			u.Password,
 			id,
 		},
 		[]interface{}{
@@ -158,7 +155,6 @@ func (repo *UserRepo) Update(ctx context.Context, id string, u *types.UserUpdate
 			&user.LastName,
 			&user.Email,
 			&user.ContactNumber,
-			&user.Password,
 		},
 	)
 	if err != nil {
