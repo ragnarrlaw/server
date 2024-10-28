@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	uuid "github.com/google/uuid"
 	database "github.com/raganrrlaw/server/internal/db"
 	"github.com/raganrrlaw/server/internal/types"
 )
@@ -79,7 +80,7 @@ func (ar *AuthRepo) GetAssociatedTokens(ctx context.Context, userId string) (*[]
 	var authTokens []types.AuthToken
 	for _, row := range rows {
 		authToken := types.AuthToken{
-			Id:     row["id"].(string),
+			Id:     row["id"].(uuid.UUID),
 			UserId: row["user_id"].(string),
 			Token:  row["token"].(string),
 		}
