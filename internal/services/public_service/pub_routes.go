@@ -5,6 +5,6 @@ import (
 )
 
 func RegisterRoutes(router *http.ServeMux) {
-  router.HandleFunc("GET /", IndexHandler)
-  router.HandleFunc("GET /favicon.ico", FaviconHandler)
+	router.HandleFunc("GET /", IndexHandler)
+	router.HandleFunc("GET /favicon.ico", FaviconHandler)
 }

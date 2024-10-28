@@ -3,10 +3,9 @@ package database
 import (
 	"context"
 	"errors"
-	"log"
-
 	"github.com/jackc/pgx/v5"
-	pgxPool "github.com/jackc/pgx/v5/pgxpool"
+	pgxpool "github.com/jackc/pgx/v5/pgxpool"
+	pgxuuid "github.com/vgarvardt/pgx-google-uuid/v5"
 )
 
 /*
@@ -15,19 +14,28 @@ import (
 */
 
 type Storage struct {
-	pool *pgxPool.Pool
+	pool *pgxpool.Pool
 }
 
 func NewStorage(config StorageConfig) (*Storage, error) {
-	pool, err := pgxPool.New(context.Background(), config.FormatDSN())
+
+	cnf, err := pgxpool.ParseConfig(config.FormatDSN())
 	if err != nil {
-		log.Fatalf("Unable to create connection pool: %s\n", err.Error())
-		return nil, err
+		panic(err)
+	}
+
+	cnf.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		pgxuuid.Register(conn.TypeMap())
+		return nil
+	}
+
+	pool, err := pgxpool.NewWithConfig(context.Background(), cnf)
+	if err != nil {
+		panic(err)
 	}
 
 	if err := pool.Ping(context.Background()); err != nil {
-		log.Fatalf("Database connection test failed: %s\n", err.Error())
-		return nil, err
+		panic(err)
 	}
 
 	return &Storage{
@@ -35,7 +43,7 @@ func NewStorage(config StorageConfig) (*Storage, error) {
 	}, nil
 }
 
-func (db *Storage) GetRow(ctx context.Context, sql string, args []interface{}, dest ...interface{}) error {
+func (db *Storage) GetRow(ctx context.Context, sql string, args []interface{}, dest []interface{}) error {
 	row := db.pool.QueryRow(ctx, sql, args...)
 	err := row.Scan(dest...)
 	if err != nil {

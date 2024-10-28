@@ -13,13 +13,13 @@ import (
 */
 
 func main() {
-  err := config.Init()
-  if err != nil {
-    log.Fatal(err.Error())
-    os.Exit(config.EXIT_FAILURE)
-  } else {
-	  log.Println(">>>> JSON Server Serve")
-    server := server.NewServer(":9999")
-    server.Run()
-  }
+	err := config.Init()
+	if err != nil {
+		log.Fatal(err.Error())
+		os.Exit(config.EXIT_FAILURE)
+	} else {
+		log.Println(">>>> JSON Server Serve")
+		server := server.NewServer(":9999")
+		server.Run()
+	}
 }
