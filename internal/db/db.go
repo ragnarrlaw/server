@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"errors"
-
 	"github.com/jackc/pgx/v5"
 	pgxpool "github.com/jackc/pgx/v5/pgxpool"
 	pgxuuid "github.com/vgarvardt/pgx-google-uuid/v5"

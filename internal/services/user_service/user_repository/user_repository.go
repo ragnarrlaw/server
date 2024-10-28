@@ -98,6 +98,14 @@ func (repo *UserRepo) GetBy(ctx context.Context, field string, value any) (*type
 			&user.Password,
 		},
 	)
+}
+
+func (repo *UserRepo) GetById(ctx context.Context, id string) (*types.User, error) {
+	query := "SELECT id, name, email FROM users WHERE id = $1"
+	var user types.User
+	err := repo.storage.GetRow(
+		ctx,
+		query, []string{id}, &user.ID, &user.Name, &user.Email)
 	if err != nil {
 		return nil, err
 	}

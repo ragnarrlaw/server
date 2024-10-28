@@ -11,7 +11,6 @@ import (
   These are added to maintain the structure of the repositories
   despite the data storage changes
 */
-
 func ErrorHandler(w http.ResponseWriter, err error, statusCode int, message string) {
 	_, file, line, ok := runtime.Caller(1)
 	if ok {
