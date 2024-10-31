@@ -14,13 +14,13 @@ func NewStoreService(storeRepository storerepository.StoreRepository) *StoreServ
 	return &StoreService{storeRepository: storeRepository}
 }
 
-func (ss *StoreService) GetAllStoresHandler (w http.ResponseWriter, r *http.Request) {}
+func (ss *StoreService) GetAllStoresHandler(w http.ResponseWriter, r *http.Request) {
+}
 
-func (ss *StoreService) GetStoreHandler (w http.ResponseWriter, r *http.Request) {}
+func (ss *StoreService) GetStoreHandler(w http.ResponseWriter, r *http.Request) {}
 
-func (ss *StoreService) AddStoreHandler (w http.ResponseWriter, r *http.Request) {}
+func (ss *StoreService) AddStoreHandler(w http.ResponseWriter, r *http.Request) {}
 
-func (ss *StoreService) UpdateStoreHandler (w http.ResponseWriter, r *http.Request) {}
+func (ss *StoreService) UpdateStoreHandler(w http.ResponseWriter, r *http.Request) {}
 
-func (ss *StoreService) RemoveStoreHandler (w http.ResponseWriter, r *http.Request) {}
-
+func (ss *StoreService) RemoveStoreHandler(w http.ResponseWriter, r *http.Request) {}
