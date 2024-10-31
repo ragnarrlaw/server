@@ -1,6 +1,6 @@
 package types
 
-import uuid "github.com/vgarvardt/pgx-google-uuid/v5"
+import uuid "github.com/google/uuid"
 
 type StoreSignUpPayload struct {
 	StoreName     string `json:"store_name"`
@@ -15,14 +15,20 @@ type StoreLoginPayload struct {
 	Password      string `json:"password"`
 }
 
-type StoreUpdatePayload struct{}
+type StoreUpdatePayload struct {
+	StoreUsername      string `json:"store_username" db:"store_username"`
+	StoreName          string `json:"store_name" db:"store_name"`
+	StoreEmail         string `json:"store_email" db:"store_email"`
+	StoreContactNumber string `json:"store_contact_number" db:"store_contact_number"`
+}
 
 type Store struct {
 	Id                 uuid.UUID `json:"id" db:"id"`
+	StoreUsername      string    `json:"store_username" db:"store_username"`
 	StoreName          string    `json:"store_name" db:"store_name"`
 	StoreAddress       string    `json:"store_address" db:"store_address"`
 	StoreEmail         string    `json:"store_email" db:"store_email"`
 	StoreContactNumber string    `json:"store_contact_number" db:"store_contact_number"`
 	Password           string    `json:"password_digest" db:"password_digest"`
-	StoreLocation      string    `json:"store_location" db:"store_location"`
+	// StoreLocation      string    `json:"store_location" db:"store_location"`
 }
