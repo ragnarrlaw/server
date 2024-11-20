@@ -60,8 +60,7 @@ func CorsMiddleware(next http.Handler) http.Handler {
 }
 
 // ValidateAccessTokens checks the validity of the access token
-// P.S. - doesn't validate the user credentials and the claims
-// in the token, this should be handled by the handler in service layer
+// TODO: Validate the login credentials based on the role here
 func ValidateAccessTokens(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -97,14 +96,13 @@ func ValidateAccessTokens(next http.Handler) http.Handler {
 		}
 
 		// Add user ID to the context
-		ctx := context.WithValue(r.Context(), types.UserIDKey, claims.UserId)
+		ctx := context.WithValue(r.Context(), types.IDKey, claims.Id)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 // ValidateRefreshTokens checks the validity of the Refresh token
-// P.S. - doesn't validate the user credentials and the claims
-// in the token, this should be handled by the handler in service layer
+// TODO: Validate the login id based on the type here
 func ValidateRefreshTokens(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		refreshToken, err := r.Cookie("refresh_token")
@@ -131,7 +129,7 @@ func ValidateRefreshTokens(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), types.UserIDKey, claims.UserId)
+		ctx := context.WithValue(r.Context(), types.IDKey, claims.Id)
 		ctx = context.WithValue(ctx, refreshToken, refreshToken.Value)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
