@@ -9,88 +9,113 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	authRepository "github.com/raganrrlaw/server/internal/services/auth_service/auth_repository"
+	storeRepository "github.com/raganrrlaw/server/internal/services/store_service/store_repository"
 	userRepository "github.com/raganrrlaw/server/internal/services/user_service/user_repository"
 	"github.com/raganrrlaw/server/internal/types"
 	"github.com/raganrrlaw/server/internal/utils"
 )
 
 type AuthService struct {
-	userRepo userRepository.UserRepository
-	authRepo authRepository.AuthRepository
+	userRepo  userRepository.UserRepository
+	storeRepo storeRepository.StoreRepository
+	authRepo  authRepository.AuthRepository
 }
 
-func NewAuthService(authRepo authRepository.AuthRepository, userRepo userRepository.UserRepository) *AuthService {
+func NewAuthService(authRepo authRepository.AuthRepository, userRepo userRepository.UserRepository, storeRepo storeRepository.StoreRepository) *AuthService {
 	return &AuthService{
-		authRepo: authRepo,
-		userRepo: userRepo,
+		authRepo:  authRepo,
+		userRepo:  userRepo,
+		storeRepo: storeRepo,
 	}
 }
 
 func (as *AuthService) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	var payload types.UserLoginPayload
+	var payload types.LoginPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
 	} else {
-		user, err := as.userRepo.GetBy(r.Context(), "username", payload.Username)
-		if err != nil {
-			if err.Error() == "no rows found" {
-				http.Error(w, "No such user found", http.StatusUnauthorized)
+		switch payload.Role {
+		case types.UserEntity:
+			{
+				if user, err := as.userRepo.GetBy(r.Context(), "username", payload.Username); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				} else {
+					if ok := utils.CheckPasswordHash(user.Password, payload.Password); !ok {
+						http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+					} else {
+						access_token := generateToken(&user, time.Minute*15, "user")
+						refresh_token := generateToken(&user, time.Hour*24*7, "user")
+						if _, err := as.authRepo.AddToken(r.Context(), &types.AuthToken{
+							UserId: user.Id,
+							Role:   types.UserEntity,
+							Token:  refresh_token,
+						}); err != nil {
+							http.Error(w, err.Error(), http.StatusInternalServerError)
+						} else {
+							w.Header().Set("Content-Type", "application/json")
+							w.WriteHeader(http.StatusCreated)
+							http.SetCookie(w, &http.Cookie{
+								Name:     "refresh_token",
+								Value:    refresh_token,
+								HttpOnly: true,
+								Expires:  time.Now().Add(time.Hour * 24 * 7),
+							})
+							encoder := json.NewEncoder(w)
+							if err := encoder.Encode(types.Token{
+								Type:  "Bearer",
+								Token: access_token,
+							}); err != nil {
+								http.Error(w, err.Error(), http.StatusInternalServerError)
+							}
+						}
+					}
+				}
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if ok := utils.CheckPasswordHash(payload.Password, user.Password); !ok {
-			http.Error(w, "Invalid password", http.StatusBadRequest)
-			return
-		}
-
-		// TODO: read the env and set the token duration
-
-		access_token := generateToken(user, time.Minute*15)
-		if access_token == "" {
-			http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
-			return
-		}
-		refresh_token := generateToken(user, time.Hour*30)
-		if refresh_token == "" {
-			http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
-			return
-		}
-
-		if _, err := as.authRepo.AddToken(r.Context(), &types.AuthToken{
-			UserId: user.Id.String(),
-			Token:  refresh_token,
-		}); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// TODO: read the env and set the token duration
-
-		http.SetCookie(w, &http.Cookie{
-			Name:     "refresh_token",
-			HttpOnly: true,
-			Value:    refresh_token,
-			Expires:  time.Now().Add(time.Minute * 30),
-		})
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		encoder := json.NewEncoder(w)
-		if err := encoder.Encode(struct {
-			Type        string `json:"type"`
-			AccessToken string `json:"access_token"`
-		}{
-			Type:        "Bearer",
-			AccessToken: access_token,
-		}); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		case types.StoreEntity:
+			{
+				if store, err := as.storeRepo.GetBy(r.Context(), "username", payload.Username); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				} else {
+					if ok := utils.CheckPasswordHash(store.Password, payload.Password); !ok {
+						http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+					} else {
+						access_token := generateToken(&store, time.Minute*15, "store")
+						refresh_token := generateToken(&store, time.Hour*24*7, "store")
+						if _, err := as.authRepo.AddToken(r.Context(), &types.AuthToken{
+							Id:    store.Id,
+							Role:  types.UserEntity,
+							Token: refresh_token,
+						}); err != nil {
+							http.Error(w, err.Error(), http.StatusInternalServerError)
+						} else {
+							w.Header().Set("Content-Type", "application/json")
+							w.WriteHeader(http.StatusCreated)
+							http.SetCookie(w, &http.Cookie{
+								Name:     "refresh_token",
+								Value:    refresh_token,
+								HttpOnly: true,
+								Expires:  time.Now().Add(time.Hour * 24 * 7),
+							})
+							encoder := json.NewEncoder(w)
+							if err := encoder.Encode(types.Token{
+								Type:  "Bearer",
+								Token: access_token,
+							}); err != nil {
+								http.Error(w, err.Error(), http.StatusInternalServerError)
+							}
+						}
+					}
+				}
+			}
+		default:
+			{
+				http.Error(w, "Invalid role", http.StatusBadRequest)
+			}
 		}
 	}
 }
 
+// TODO: Add the user role here
 func (as *AuthService) SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	var payload types.UserSignUpPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -117,13 +142,13 @@ func (as *AuthService) SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 func (as *AuthService) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
-	userId := r.Context().Value(types.UserIDKey).(string)
+	id := r.Context().Value(types.IDKey).(string)
 
-	if err := as.authRepo.RemoveTokensOfUser(r.Context(), userId); err != nil {
+	if err := as.authRepo.RemoveTokensOfUser(r.Context(), id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	_, err := as.userRepo.GetById(r.Context(), userId)
+	_, err := as.userRepo.GetById(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -138,36 +163,59 @@ func (as *AuthService) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (as *AuthService) RefreshAccessTokenHandler(w http.ResponseWriter, r *http.Request) {
-	userId := r.Context().Value(types.UserIDKey).(string)
-	if userId == "" {
+	id := r.Context().Value(types.IDKey).(string)
+	if id == "" {
 		http.Error(w, "Invalid user", http.StatusUnauthorized)
-		return
-	}
-	user, err := as.userRepo.GetById(r.Context(), userId)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	access_token := generateToken(user, time.Minute*15)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	encoder := json.NewEncoder(w)
-	if err := encoder.Encode(struct {
-		Type        string `json:"type"`
-		AccessToken string `json:"access_token"`
-	}{
-		Type:        "Bearer",
-		AccessToken: access_token,
-	}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	} else {
+		role := r.Context().Value(types.RoleKey).(string)
+		switch role {
+		case string(types.UserEntity):
+			{
+				user, err := as.userRepo.GetById(r.Context(), id)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				} else {
+					access_token := generateToken(&user, time.Minute*15, "user")
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusCreated)
+					encoder := json.NewEncoder(w)
+					if err := encoder.Encode(types.Token{
+						Type:  "Bearer",
+						Token: access_token,
+					}); err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+					}
+				}
+			}
+		case string(types.StoreEntity):
+			{
+				if store, err := as.storeRepo.GetById(r.Context(), id); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				} else {
+					access_token := generateToken(&store, time.Minute*15, "store")
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusCreated)
+					encoder := json.NewEncoder(w)
+					if err := encoder.Encode(types.Token{
+						Type:  "Bearer",
+						Token: access_token,
+					}); err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+					}
+				}
+			}
+		default:
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		}
 	}
 }
 
-func generateToken(user *types.User, duration time.Duration) string {
+func generateToken[T types.Identifiable](t *T, duration time.Duration, role string) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
-		"user_id": user.Id,
-		"sub":     user.Username,
-		"exp":     time.Now().Add(duration).Unix(),
+		"_id":  (*t).GetId(),
+		"sub":  (*t).GetUsername(),
+		"exp":  time.Now().Add(duration).Unix(),
+		"role": role,
 	})
 	if tokenString, err := token.SignedString([]byte(os.Getenv("JWT_TOKEN_SECRET"))); err != nil {
 		log.Printf(">>>> Error: %s\n", err.Error())
