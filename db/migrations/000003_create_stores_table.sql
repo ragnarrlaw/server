@@ -14,7 +14,7 @@ CREATE TABLE store (
     store_web_url VARCHAR(255),
     password_digest VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- +goose Down
