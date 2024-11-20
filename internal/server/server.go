@@ -9,12 +9,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/raganrrlaw/server/internal/config"
-	database "github.com/raganrrlaw/server/internal/db"
+	"github.com/raganrrlaw/server/config"
+	database "github.com/raganrrlaw/server/db/database"
 	"github.com/raganrrlaw/server/internal/middleware"
 	authservice "github.com/raganrrlaw/server/internal/services/auth_service"
 	authrepository "github.com/raganrrlaw/server/internal/services/auth_service/auth_repository"
 	publicservice "github.com/raganrrlaw/server/internal/services/public_service"
+	storeservice "github.com/raganrrlaw/server/internal/services/store_service"
+	storerepository "github.com/raganrrlaw/server/internal/services/store_service/store_repository"
 	userservice "github.com/raganrrlaw/server/internal/services/user_service"
 	userrepository "github.com/raganrrlaw/server/internal/services/user_service/user_repository"
 )
@@ -56,15 +58,15 @@ func (s *Server) Run() {
 
 	// initialize the repositories here
 	userRepo := userrepository.NewUserRepo(s.storage)
-
-	// initialize the user services
-	userService := userservice.NewUserService(userRepo)
-	userService.RegisterRoutes(router)
-
-	// initialize the auth services
+	storeRepo := storerepository.NewStoreRepo(s.storage)
 	authRepo := authrepository.NewAuthRepo(s.storage)
 
-	authService := authservice.NewAuthService(authRepo, userRepo)
+	// initialize the services
+	userService := userservice.NewUserService(userRepo)
+	userService.RegisterRoutes(router)
+	storeService := storeservice.NewStoreService(storeRepo)
+	storeService.RegisterRoutes(router)
+	authService := authservice.NewAuthService(authRepo, userRepo, storeRepo)
 	authService.RegisterRoutes(router)
 
 	// initialize the public services here
