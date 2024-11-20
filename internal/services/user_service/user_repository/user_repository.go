@@ -39,7 +39,7 @@ func NewUserRepo(storage *database.Storage) UserRepository {
 
 func (repo *UserRepo) Add(ctx context.Context, u *types.UserSignUpPayload) (*types.User, error) {
 	query := `
-		INSERT INTO user (username, first_name, last_name, email, contact_number, password_digest) 
+		INSERT INTO users (username, first_name, last_name, email, contact_number, password_digest) 
 		VALUES ($1, $2, $3, $4, $5, $6) 
 		RETURNING id, username, first_name, last_name, email, contact_number, password_digest
 	`
@@ -72,7 +72,7 @@ func (repo *UserRepo) Add(ctx context.Context, u *types.UserSignUpPayload) (*typ
 func (repo *UserRepo) GetById(ctx context.Context, id string) (*types.User, error) {
 	query := `
 		SELECT id, username, first_name, last_name, email, contact_number, password_digest 
-		FROM user WHERE id = $1
+		FROM users WHERE id = $1
 	`
 	var user types.User
 
@@ -98,7 +98,7 @@ func (repo *UserRepo) GetById(ctx context.Context, id string) (*types.User, erro
 func (repo *UserRepo) GetBy(ctx context.Context, field string, value any) (*types.User, error) {
 	query := fmt.Sprintf(`
 		SELECT id, username, first_name, last_name, email,contact_number, password_digest
-		FROM user WHERE %s = $1
+		FROM users WHERE %s = $1
 	`,
 		field,
 	)
@@ -126,7 +126,7 @@ func (repo *UserRepo) GetBy(ctx context.Context, field string, value any) (*type
 func (repo *UserRepo) GetAll(ctx context.Context) (*[]types.User, error) {
 	query := `
 		SELECT id, username, first_name, last_name, email, contact_number, password_digest
-		FROM user
+		FROM users
 	`
 	if rows, err := repo.storage.Pool.Query(
 		ctx,
@@ -170,7 +170,7 @@ func (repo *UserRepo) Remove(ctx context.Context, ids []string) error {
 
 func (repo *UserRepo) Update(ctx context.Context, id string, u *types.UserUpdatePayload) (*types.User, error) {
 	query := `
-		UPDATE user SET username = $1, first_name = $2, last_name = $3 WHERE id = $4
+		UPDATE users SET username = $1, first_name = $2, last_name = $3 WHERE id = $4
 		RETURNING id, username, first_name, last_name, email, contact_number
 	`
 	var user types.User
