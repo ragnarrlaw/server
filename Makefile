@@ -74,11 +74,16 @@ migrate-up-to: migrate-build
 	@$(MIGRATION_BUILD) db/migrations up-to 000003
 	@echo "Migration completed."
 
-
-## Goose down
-migrate-down: migrate-build
+## Goose down -- this will rollback the last migration
+migrate-down-one: migrate-build
 	@echo "Running migration..."
 	@$(MIGRATION_BUILD) db/migrations down
+	@echo "Migration completed."
+
+## Goose down -- this will rollback all migrations
+migrate-down: migrate-build
+	@echo "Running migration..."
+	@$(MIGRATION_BUILD) db/migrations down-to 0
 	@echo "Migration completed."
 
 ## Goose status
