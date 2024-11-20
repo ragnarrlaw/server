@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/raganrrlaw/server/internal/config"
+	"github.com/raganrrlaw/server/config"
 )
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
