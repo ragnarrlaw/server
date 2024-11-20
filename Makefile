@@ -21,6 +21,7 @@ all: lint test build
 
 ## Build the application binary
 build:
+	@if [ ! -d "$(BUILD_DIR)" ]; then mkdir -p $(BUILD_DIR); fi
 	@echo "Building $(APP_NAME)..."
 	@$(GO) build $(GO_BUILD_FLAGS) -o $(BUILD_DIR)/$(APP_NAME) $(MAIN_FILE)
 	@echo "Binary built at $(BUILD_DIR)/$(APP_NAME)."
@@ -81,7 +82,7 @@ migrate-down: migrate-build
 	@echo "Migration completed."
 
 ## Goose status
-migrate-status: migrate
+migrate-status: migrate-build
 	@echo "Running migration status..."
 	@$(MIGRATION_BUILD) db/migrations status
 
