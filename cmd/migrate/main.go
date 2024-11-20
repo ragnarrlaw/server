@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -92,8 +93,29 @@ func main() {
 		arguments = append(arguments, args[1:]...)
 	}
 
-	if err := goose.RunContext(context.Background(), command, db, dir, arguments...); err != nil {
-		log.Fatalf(">>>> failed to run the command: %v\n", err.Error())
+	switch command {
+	case "down-to":
+		{
+			if len(args) < 3 {
+				log.Println(">>>> please provide the version to rollback to")
+				return
+			} else {
+				if version, err := strconv.Atoi(args[2]); err != nil {
+					log.Fatalf(">>>> failed to convert the version to integer: %v\n", err.Error())
+				} else {
+					arguments := []string{strconv.Itoa(version)}
+					if err := goose.RunContext(context.Background(), command, db, dir, arguments...); err != nil {
+						log.Fatalf(">>>> failed to run the command: %v\n", err.Error())
+					}
+				}
+			}
+		}
+	default:
+		{
+			if err := goose.RunContext(context.Background(), command, db, dir, arguments...); err != nil {
+				log.Fatalf(">>>> failed to run the command: %v\n", err.Error())
+			}
+		}
 	}
 	log.Println(">>>> completed running migrations")
 }
