@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/raganrrlaw/server/internal/config"
+	"github.com/raganrrlaw/server/config"
 	"github.com/raganrrlaw/server/internal/server"
 )
 
