@@ -11,35 +11,51 @@ import (
 type ContextKey string
 
 const (
-	UserIDKey       ContextKey = "user_id"
+	IDKey           ContextKey = "_id"
 	RefreshTokenKey ContextKey = "refresh_token"
 	AccessTokenKey  ContextKey = "access_token"
+	RoleKey         ContextKey = "_role"
 )
 
+type EntityType string
+
+const (
+	UserEntity  EntityType = "user"
+	StoreEntity EntityType = "store"
+)
+
+type LoginPayload struct {
+	Username string     `json:"username"`
+	Password string     `json:"password"`
+	Role     EntityType `json:"role"`
+}
+
 type Token struct {
-	Type        string `json:"type"`
-	AccessToken string `json:"access_token"`
+	Type  string `json:"type"`
+	Token string `json:"access_token"`
 }
 
 func (t *Token) String() string {
-	return fmt.Sprintf("Token: { Type: %s, AccessToken: %s }", t.Type, t.AccessToken)
+	return fmt.Sprintf("Token: { Type: %s, AccessToken: %s }", t.Type, t.Token)
 }
 
 type TokenClaims struct {
-	UserId string `json:"user_id"`
+	Id   string     `json:"user_id"`
+	Role EntityType `json:"role"`
 	jwt.RegisteredClaims
 }
 
 func (tc *TokenClaims) String() string {
-	return fmt.Sprintf("TokenClaims: { UserId: %s }", tc.UserId)
+	return fmt.Sprintf("TokenClaims: { UserId: %s, Role: %s }", tc.Id, tc.Role)
 }
 
 type AuthToken struct {
-	Id     uuid.UUID `json:"id"`
-	UserId string    `json:"user_id"`
-	Token  string    `json:"token"`
+	Id     uuid.UUID  `json:"id"`
+	UserId uuid.UUID  `json:"user_id"`
+	Role   EntityType `json:"role"`
+	Token  string     `json:"token"`
 }
 
 func (at *AuthToken) String() string {
-	return fmt.Sprintf("AuthToken: { Id: %s, UserId: %s, Token: %s }", at.Id, at.UserId, at.Token)
+	return fmt.Sprintf("AuthToken: { Id: %s, UserId: %s, Role: %s, Token: %s }", at.Id, at.UserId, at.Role, at.Token)
 }
