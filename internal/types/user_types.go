@@ -20,6 +20,14 @@ func (u *User) String() string {
 	return fmt.Sprintf("User: { Id: %s, Username: %s, FirstName: %s, LastName: %s, Email: %s, ContactNumber: %s }", u.Id, u.Username, u.FirstName, u.LastName, u.Email, u.ContactNumber)
 }
 
+func (u *User) GetId() string {
+	return u.Id.String()
+}
+
+func (u *User) GetUsername() string {
+	return u.Username
+}
+
 type UserSignUpPayload struct {
 	Username      string `json:"username"`
 	FirstName     string `json:"firstName"`
@@ -35,10 +43,8 @@ func (usp *UserSignUpPayload) String() string {
 }
 
 /*
-*
-
-	Password updates, and email, and contact number updates are handled by the authentication services
-*/
+* Password updates, and email, and contact number updates are handled by the authentication services
+ */
 type UserUpdatePayload struct {
 	Username  string `json:"username"`
 	FirstName string `json:"firstName"`
@@ -50,11 +56,39 @@ func (uup *UserUpdatePayload) String() string {
 	return fmt.Sprintf("UserUpdatePayload: { Username: %s, FirstName: %s, LastName: %s }", uup.Username, uup.FirstName, uup.LastName)
 }
 
-type UserLoginPayload struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+/*
+  - The preferences field is a jsonb field
+  - payload example:
+    { "userId": "uuid", "preferences": { "theme": "dark", "language": "en", preferredPaymentMethod: {card: [list of cards]} || 'cash' } }
+  - Use string type for unstructured data unmarshaling
+*/
+type UserPreferences struct {
+	UserId      uuid.UUID `json:"userId" db:"user_id"`
+	Preferences string    `json:"preferences" db:"preferences"`
+	CreatedAt   string    `json:"createdAt" db:"created_at"`
+	UpdateAt    string    `json:"updatedAt" db:"updated_at"`
 }
 
-func (ulp *UserLoginPayload) String() string {
-	return fmt.Sprintf("UserLoginPayload: { Username: %s, Password: %s }", ulp.Username, ulp.Password)
+func (up *UserPreferences) String() string {
+	return fmt.Sprintf("UserPreferences: { UserId: %s, Preferences: %v, CreatedAt: %s, UpdatedAt: %s }", up.UserId, up.Preferences, up.CreatedAt, up.UpdateAt)
+}
+
+type UserInputProductList struct {
+	Id        uuid.UUID `json:"id" db:"id"`
+	UserId    uuid.UUID `json:"userId" db:"user_id"`
+	Items     string    `json:"items" db:"items"` // contains a json string
+	CreatedAt string    `json:"createdAt" db:"created_at"`
+	UpdatedAt string    `json:"updatedAt" db:"updated_at"`
+}
+
+func (upl *UserInputProductList) String() string {
+	return fmt.Sprintf("UserProductList: { UserId: %s, ProductsList: %s, CreatedAt: %s, UpdatedAt: %s }", upl.UserId, upl.Items, upl.CreatedAt, upl.UpdatedAt)
+}
+
+type UserInputListPayload struct {
+	List string `json:"list"`
+}
+
+func (d *UserInputListPayload) String() string {
+	return fmt.Sprintf("UserInputListPayload: { List: %v }", d.List)
 }

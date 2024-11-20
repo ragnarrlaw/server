@@ -165,3 +165,174 @@ func (us *UserService) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "user is required", http.StatusBadRequest)
 	}
 }
+
+func (us *UserService) GetUserPreferencesHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	if userId := r.PathValue("id"); userId != "" {
+		if preferences, err := us.userRepository.GetUserPreferences(ctx, userId); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			if b, err := json.Marshal(preferences); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.Write(b)
+			}
+		}
+	} else {
+		http.Error(w, "user id is required", http.StatusBadRequest)
+	}
+}
+
+func (us *UserService) UpdateUserPreferencesHandler(w http.ResponseWriter, r *http.Request) {
+	payload := &types.UserPreferences{}
+	err := json.NewDecoder(r.Body).Decode(payload)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	if userId := r.PathValue("id"); userId != "" {
+		if preferences, err := us.userRepository.UpdateUserPreferences(ctx, userId, payload); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			if b, err := json.Marshal(preferences); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.Write(b)
+			}
+		}
+	} else {
+		http.Error(w, "user id is required", http.StatusBadRequest)
+	}
+}
+
+func (us *UserService) GetUserInputListsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	if userId := r.PathValue("id"); userId != "" {
+		if lists, err := us.userRepository.GetUserInputLists(ctx, userId); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			if b, err := json.Marshal(lists); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.Write(b)
+			}
+		}
+	} else {
+		http.Error(w, "user id is required", http.StatusBadRequest)
+	}
+}
+
+func (us *UserService) GetUserInputListHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	if userId := r.PathValue("id"); userId != "" {
+		if listId := r.PathValue("listId"); listId != "" {
+			if list, err := us.userRepository.GetUserInputList(ctx, userId, listId); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			} else {
+				if b, err := json.Marshal(list); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				} else {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					w.Write(b)
+				}
+			}
+		} else {
+			http.Error(w, "list id is required", http.StatusBadRequest)
+		}
+	} else {
+		http.Error(w, "user id is required", http.StatusBadRequest)
+	}
+}
+
+func (us *UserService) AddUserInputListHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	if userId := r.PathValue("id"); userId != "" {
+		payload := &types.UserInputListPayload{}
+		err := json.NewDecoder(r.Body).Decode(payload)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if list, err := us.userRepository.AddUserInputList(ctx, userId, payload); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			if b, err := json.Marshal(list); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusCreated)
+				w.Write(b)
+			}
+		}
+	} else {
+		http.Error(w, "user id is required", http.StatusBadRequest)
+	}
+}
+
+func (us *UserService) UpdateUserInputListHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	if userId := r.PathValue("id"); userId != "" {
+		payload := &types.UserInputListPayload{}
+		if err := json.NewDecoder(r.Body).Decode(payload); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		} else {
+			if listId := r.PathValue("listId"); listId != "" {
+				if list, err := us.userRepository.UpdateUserInputLists(ctx, userId, listId, payload); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				} else {
+					if b, err := json.Marshal(list); err != nil {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+					} else {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						w.Write(b)
+					}
+				}
+			} else {
+				http.Error(w, "list id is required", http.StatusBadRequest)
+			}
+		}
+	} else {
+		http.Error(w, "user id is required", http.StatusBadRequest)
+	}
+}
+
+func (us *UserService) RemoveUserInputListHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	if userId := r.PathValue("id"); userId != "" {
+		if listId := r.URL.Query()["listId"]; len(listId) > 0 {
+			if err := us.userRepository.RemoveUserInputLists(ctx, userId, listId); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusNoContent)
+			}
+		} else {
+			http.Error(w, "list id is required", http.StatusBadRequest)
+		}
+	} else {
+		http.Error(w, "user id is required", http.StatusBadRequest)
+	}
+}
