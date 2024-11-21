@@ -16,6 +16,7 @@ type ProductRepository interface {
 	GetAll(ctx context.Context, storeId string) (*[]types.Product, error)
 	Remove(ctx context.Context, storeId string, productIds []string) error
 	Update(ctx context.Context, storeId string, productId string, product *types.ProductPayload) (*types.Product, error)
+	GetProductDiscounts(ctx context.Context, storeId string, productId string) (*[]types.Discount, error)
 	AddProductDiscount(ctx context.Context, storeId string, productId string, payload *types.DiscountPayload) (*types.Discount, error)
 	UpdateDiscount(ctx context.Context, storeId string, productId string, discountId string, payload *types.DiscountPayload) (*types.Discount, error)
 	RemoveDiscount(ctx context.Context, storeId string, productId string, discountId []string) error
@@ -35,7 +36,7 @@ func (repo *ProductRepo) Add(ctx context.Context, storeId string, payload *types
 	q1 := `
 		INSERT INTO product (name, description, brand, category_id) 
 		VALUES ($1, $2, $3, $4) 
-		RETURNING id, name, description, brand, category_id,
+		RETURNING id, name, description, brand, category_id
 	`
 	var product types.Product
 	if tx, err := repo.storage.Pool.BeginTx(
@@ -67,9 +68,9 @@ func (repo *ProductRepo) Add(ctx context.Context, storeId string, payload *types
 			return nil, err
 		} else {
 			q2 := `
-				INSERT INTO store_product (store_id, product_id, price, stock_quantity, unit_of_measure, currency)
-				VALUES ($1, $2, $3, $4, $5, $6)
-				RETURNING id, store_id, product_id, price, stock_quantity, unit_of_measure, currency
+				INSERT INTO store_product (store_id, product_id, price, stock_quantity, unit_of_measurement)
+				VALUES ($1, $2, $3, $4, $5)
+				RETURNING id, store_id, product_id, price, stock_quantity, unit_of_measurement, currency
 			`
 			var productInfo types.ProductInfo
 			if err := tx.QueryRow(
@@ -133,7 +134,7 @@ func (repo *ProductRepo) Add(ctx context.Context, storeId string, payload *types
 				} else {
 					product.Discount = []types.Discount{}
 				}
-				q3 := `SELECT id, category, parent_category_id FROM product_category WHERE id = $1`
+				q3 := `SELECT id, category, parent_category_id FROM category WHERE id = $1`
 				if err := tx.QueryRow(
 					ctx,
 					q3,
@@ -149,6 +150,7 @@ func (repo *ProductRepo) Add(ctx context.Context, storeId string, payload *types
 					if err := tx.Commit(ctx); err != nil {
 						return nil, err
 					} else {
+						fmt.Println("product: ", product)
 						return &product, nil
 					}
 				}
@@ -159,12 +161,12 @@ func (repo *ProductRepo) Add(ctx context.Context, storeId string, payload *types
 
 func (repo *ProductRepo) GetById(ctx context.Context, storeId string, productId string) (*types.Product, error) {
 	query := `
-		SELECT p.id, p.name, p.description, p.brand, p.category_id,
+		SELECT p.id, p.name, p.description, p.brand,
 			pc.id, pc.category, pc.parent_category_id,
-			pi.id, pi.store_id, pi.product_id, pi.price, pi.stock_quantity, pi.unit_of_measure, pi.currency
+			pi.id, pi.store_id, pi.product_id, pi.price, pi.stock_quantity, pi.unit_of_measurement, pi.currency
 		FROM product p
-		JOIN product_category pc ON p.category_id = pc.id
-		JOIN product_info pi ON p.id = pi.product_id
+		JOIN category pc ON p.category_id = pc.id
+		JOIN store_product pi ON p.id = pi.product_id
 		WHERE pi.store_id = $1 AND pi.product_id = $2
 	`
 	row := repo.storage.Pool.QueryRow(
@@ -223,12 +225,12 @@ func (repo *ProductRepo) GetById(ctx context.Context, storeId string, productId 
 
 func (repo *ProductRepo) GetAll(ctx context.Context, storeId string) (*[]types.Product, error) {
 	query := `
-		SELECT p.id, p.name, p.description, p.brand, p.category_id,
+		SELECT p.id, p.name, p.description, p.brand,
 			pc.id, pc.category, pc.parent_category_id,
-			pi.id, pi.store_id, pi.product_id, pi.price, pi.stock_quantity, pi.unit_of_measure, pi.currency
+			pi.id, pi.store_id, pi.product_id, pi.price, pi.stock_quantity, pi.unit_of_measurement, pi.currency
 		FROM product p
-		JOIN product_category pc ON p.category_id = pc.id
-		JOIN product_info pi ON p.id = pi.product_id
+		JOIN category pc ON p.category_id = pc.id
+		JOIN store_product pi ON p.id = pi.product_id
 		WHERE pi.store_id = $1
 	`
 	if rows, err := repo.storage.Pool.Query(ctx, query, storeId); err != nil {
@@ -309,9 +311,8 @@ func (repo *ProductRepo) Update(ctx context.Context, storeId string, productId s
 		UPDATE product SET 
 			name = COALESCE(NULLIF($1, name), name) ,
 			description = COALESCE(NULLIF($2, description), description),
-			brand = COALESCE(NULLIF($2, brand), brand),
-			category_id = COALESCE(NULLIF($2, category_id), category_id)
-		WHERE id = $5
+			brand = COALESCE(NULLIF($3, brand), brand)
+		WHERE id = $4
 		RETURNING id, name, description, brand, category_id
 	`
 		var product types.Product
@@ -321,7 +322,6 @@ func (repo *ProductRepo) Update(ctx context.Context, storeId string, productId s
 			p.Name,
 			p.Description,
 			p.Brand,
-			p.CategoryId,
 			productId,
 		).Scan(
 			&product.Id,
@@ -334,13 +334,12 @@ func (repo *ProductRepo) Update(ctx context.Context, storeId string, productId s
 			return nil, err
 		} else {
 			q2 := `
-			UPDATE product_info SET
+			UPDATE store_product SET
 				price = COALESCE(NULLIF($1, price), price),
 				stock_quantity = COALESCE(NULLIF($2, stock_quantity), stock_quantity),
-				unit_of_measure = COALESCE(NULLIF($3, unit_of_measure), unit_of_measure),
-				currency = COALESCE(NULLIF($4, currency), currency)
-			WHERE product_id = $5 AND store_id = $6
-			RETURNING id, store_id, product_id, price, stock_quantity, unit_of_measure, currency
+				unit_of_measurement = COALESCE(NULLIF($3, unit_of_measurement), unit_of_measurement)
+			WHERE product_id = $4 AND store_id = $5
+			RETURNING id, store_id, product_id, price, stock_quantity, unit_of_measurement, currency
 			`
 			var productInfo types.ProductInfo
 			if err := tx.QueryRow(
@@ -371,6 +370,42 @@ func (repo *ProductRepo) Update(ctx context.Context, storeId string, productId s
 	}
 
 	return nil, nil
+}
+
+func (repo *ProductRepo) GetProductDiscounts(ctx context.Context, storeId string, productId string) (*[]types.Discount, error) {
+	query := `
+		SELECT
+			id, store_id, product_id, discount_type, value, start_date, end_date
+		FROM discount
+		WHERE store_id = $1 AND product_id = $2
+	`
+	var discounts []types.Discount
+	if rows, err := repo.storage.Pool.Query(
+		ctx,
+		query,
+		storeId,
+		productId,
+	); err != nil {
+		return nil, err
+	} else {
+		for rows.Next() {
+			var discount types.Discount
+			if err := rows.Scan(
+				&discount.Id,
+				&discount.StoreId,
+				&discount.ProductId,
+				&discount.DiscountType,
+				&discount.Value,
+				&discount.StartDate,
+				&discount.EndDate,
+			); err != nil {
+				return nil, err
+			} else {
+				discounts = append(discounts, discount)
+			}
+		}
+		return &discounts, nil
+	}
 }
 
 func (repo *ProductRepo) AddProductDiscount(ctx context.Context, storeId string, productId string, payload *types.DiscountPayload) (*types.Discount, error) {
@@ -459,7 +494,7 @@ func (repo *ProductRepo) RemoveAllDiscounts(ctx context.Context, storeId string,
 }
 
 func (repo *ProductRepo) ProductCategories(ctx context.Context) (*[]types.ProductCategory, error) {
-	query := `SELECT id, category, parent_category_id FROM product_category`
+	query := `SELECT id, category, parent_category_id FROM category`
 	if rows, err := repo.storage.Pool.Query(ctx, query); err != nil {
 		return nil, err
 	} else {

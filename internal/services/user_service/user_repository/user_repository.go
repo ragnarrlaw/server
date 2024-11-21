@@ -19,7 +19,7 @@ type UserRepository interface {
 
 	// user preferences
 	GetUserPreferences(context.Context, string) (*types.UserPreferences, error)
-	UpdateUserPreferences(context.Context, string, *types.UserPreferences) (*types.UserPreferences, error)
+	UpdateUserPreferences(context.Context, string, *types.UserPreferencesPayload) (*types.UserPreferences, error)
 
 	// user input lists
 	GetUserInputLists(context.Context, string) (*[]types.UserInputProductList, error)
@@ -219,16 +219,16 @@ func (repo *UserRepo) GetUserPreferences(ctx context.Context, userId string) (*t
 	}
 }
 
-func (repo *UserRepo) UpdateUserPreferences(ctx context.Context, userId string, preferences *types.UserPreferences) (*types.UserPreferences, error) {
+func (repo *UserRepo) UpdateUserPreferences(ctx context.Context, userId string, preferences *types.UserPreferencesPayload) (*types.UserPreferences, error) {
 	query := `
-		UPDATE user_preferences SET preferences = $1 WHERE id = $2
-		RETURNING userId, preferences, created_at, updated_at
+		UPDATE user_preferences SET preferences = $1 WHERE user_id = $2
+		RETURNING user_id, preferences, created_at, updated_at
 	`
 	var userPreferences types.UserPreferences
 	if err := repo.storage.Pool.QueryRow(
 		ctx,
 		query,
-		preferences,
+		preferences.Preferences,
 		userId,
 	).Scan(
 		&userPreferences.UserId,
@@ -244,7 +244,7 @@ func (repo *UserRepo) UpdateUserPreferences(ctx context.Context, userId string, 
 
 func (repo *UserRepo) GetUserInputLists(ctx context.Context, userId string) (*[]types.UserInputProductList, error) {
 	query := `
-		SELECT id, user_id, lists, created_at, updated_at FROM user_shopping_lists WHERE user_id = $1
+		SELECT id, user_id, items, created_at, updated_at FROM user_shopping_lists WHERE user_id = $1
 	`
 	var userInputProductList []types.UserInputProductList
 	if rows, err := repo.storage.Pool.Query(
@@ -273,7 +273,7 @@ func (repo *UserRepo) GetUserInputLists(ctx context.Context, userId string) (*[]
 
 func (repo *UserRepo) GetUserInputList(ctx context.Context, userId string, listId string) (*types.UserInputProductList, error) {
 	query := `
-		SELECT id, user_id, lists, created_at, updated_at FROM user_shopping_lists WHERE user_id = $1 AND id = $2
+		SELECT id, user_id, items, created_at, updated_at FROM user_shopping_lists WHERE user_id = $1 AND id = $2
 	`
 	var userInputProductList types.UserInputProductList
 	if err := repo.storage.Pool.QueryRow(
@@ -296,8 +296,8 @@ func (repo *UserRepo) GetUserInputList(ctx context.Context, userId string, listI
 
 func (repo *UserRepo) AddUserInputList(ctx context.Context, userId string, list *types.UserInputListPayload) (*types.UserInputProductList, error) {
 	query := `
-		INSERT INTO user_shopping_lists (user_id, lists) VALUES ($1, $2) RETURNING id, 
-		user_id, lists, created_at, updated_at`
+		INSERT INTO user_shopping_lists (user_id, items) VALUES ($1, $2) RETURNING id, 
+		user_id, items, created_at, updated_at`
 	var userInputProductList types.UserInputProductList
 	if err := repo.storage.Pool.QueryRow(
 		ctx,
@@ -319,8 +319,8 @@ func (repo *UserRepo) AddUserInputList(ctx context.Context, userId string, list 
 
 func (repo *UserRepo) UpdateUserInputLists(ctx context.Context, userId string, listId string, list *types.UserInputListPayload) (*types.UserInputProductList, error) {
 	query := `
-		UPDATE user_shopping_lists SET lists = $1 WHERE user_id = $2 AND id = $3
-		RETURNING id, user_id, lists, created_at, updated_at
+		UPDATE user_shopping_lists SET items = $1 WHERE user_id = $2 AND id = $3
+		RETURNING id, user_id, items, created_at, updated_at
 	`
 	var userInputProductList types.UserInputProductList
 	if err := repo.storage.Pool.QueryRow(

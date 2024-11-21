@@ -36,6 +36,7 @@ func (ps *ProductService) AddProductHandler(w http.ResponseWriter, r *http.Reque
 
 	if storeId := r.PathValue("storeId"); storeId != "" {
 		if product, err := ps.productRepository.Add(ctx, storeId, payload); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
 			if b, err := json.Marshal(product); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -152,6 +153,35 @@ func (ps *ProductService) RemoveProductHandler(w http.ResponseWriter, r *http.Re
 }
 
 // product discount handlers
+func (ps *ProductService) GetProductDiscountsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	if storeId := r.PathValue("storeId"); storeId != "" {
+		if productId := r.PathValue("productId"); productId != "" {
+			if discounts, err := ps.productRepository.GetProductDiscounts(
+				ctx,
+				storeId,
+				productId,
+			); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			} else {
+				if b, err := json.Marshal(discounts); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				} else {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					w.Write(b)
+				}
+			}
+		} else {
+			http.Error(w, "Invalid product id", http.StatusBadRequest)
+		}
+	} else {
+		http.Error(w, "Invalid store id", http.StatusBadRequest)
+	}
+}
+
 func (ps *ProductService) AddProductDiscountHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()

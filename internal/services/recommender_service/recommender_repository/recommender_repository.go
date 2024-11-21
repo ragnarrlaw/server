@@ -18,6 +18,8 @@ func NewRecommenderRepo(storage *database.Storage) RecommenderRepository {
 	return &RecommenderRepo{storage: storage}
 }
 
-func (repo *RecommenderRepo) Search(ctx context.Context, query string) error {
+func (repo *RecommenderRepo) Search(ctx context.Context, list string) error {
 	return nil
 }
+
+func GetStores(ctx context.Context, radius float64) {}

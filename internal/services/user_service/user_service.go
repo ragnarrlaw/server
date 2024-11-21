@@ -187,7 +187,7 @@ func (us *UserService) GetUserPreferencesHandler(w http.ResponseWriter, r *http.
 }
 
 func (us *UserService) UpdateUserPreferencesHandler(w http.ResponseWriter, r *http.Request) {
-	payload := &types.UserPreferences{}
+	payload := &types.UserPreferencesPayload{}
 	err := json.NewDecoder(r.Body).Decode(payload)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -208,6 +208,33 @@ func (us *UserService) UpdateUserPreferencesHandler(w http.ResponseWriter, r *ht
 				w.WriteHeader(http.StatusOK)
 				w.Write(b)
 			}
+		}
+	} else {
+		http.Error(w, "user id is required", http.StatusBadRequest)
+	}
+}
+
+func (us *UserService) RemoveUserPreferencesHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	if userId := r.PathValue("id"); userId != "" {
+		if _, err := us.userRepository.UpdateUserPreferences(ctx, userId, &types.UserPreferencesPayload{
+			Preferences: struct {
+				Theme                  types.ThemeTypes   `json:"theme"`
+				Language               string             `json:"language"`
+				PreferredPaymentMethod types.PaymentTypes `json:"preferredPaymentMethod"`
+				DigitalPaymentCards    []types.CardTypes  `json:"digitalPaymentCards"`
+			}{
+				Theme:                  types.SYSTEM_DEFAULT,
+				Language:               "en",
+				PreferredPaymentMethod: types.NO_PREFERENCE,
+				DigitalPaymentCards:    []types.CardTypes{types.LEAVE_EMPTY},
+			},
+		}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
 		}
 	} else {
 		http.Error(w, "user id is required", http.StatusBadRequest)

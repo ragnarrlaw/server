@@ -2,8 +2,34 @@ package types
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+)
+
+type PaymentTypes string
+
+const (
+	CASH          PaymentTypes = "cash"
+	CARD          PaymentTypes = "card"
+	NO_PREFERENCE PaymentTypes = ""
+)
+
+type CardTypes string
+
+const (
+	VISA        CardTypes = "visa"
+	MASTER      CardTypes = "master"
+	AMEX        CardTypes = "amex"
+	LEAVE_EMPTY CardTypes = ""
+)
+
+type ThemeTypes string
+
+const (
+	LIGHT          ThemeTypes = "light"
+	DARK           ThemeTypes = "dark"
+	SYSTEM_DEFAULT ThemeTypes = "default"
 )
 
 type User struct {
@@ -65,20 +91,33 @@ func (uup *UserUpdatePayload) String() string {
 type UserPreferences struct {
 	UserId      uuid.UUID `json:"userId" db:"user_id"`
 	Preferences string    `json:"preferences" db:"preferences"`
-	CreatedAt   string    `json:"createdAt" db:"created_at"`
-	UpdateAt    string    `json:"updatedAt" db:"updated_at"`
+	CreatedAt   time.Time `json:"createdAt" db:"created_at"`
+	UpdateAt    time.Time `json:"updatedAt" db:"updated_at"`
 }
 
 func (up *UserPreferences) String() string {
 	return fmt.Sprintf("UserPreferences: { UserId: %s, Preferences: %v, CreatedAt: %s, UpdatedAt: %s }", up.UserId, up.Preferences, up.CreatedAt, up.UpdateAt)
 }
 
+type UserPreferencesPayload struct {
+	Preferences struct {
+		Theme                  ThemeTypes   `json:"theme"`
+		Language               string       `json:"language"`
+		PreferredPaymentMethod PaymentTypes `json:"preferredPaymentMethod"`
+		DigitalPaymentCards    []CardTypes  `json:"digitalPaymentCards"`
+	} `json:"preferences"`
+}
+
+func (upp *UserPreferencesPayload) String() string {
+	return fmt.Sprintf("UserPreferencesPayload: { Preferences: %v }", upp.Preferences)
+}
+
 type UserInputProductList struct {
 	Id        uuid.UUID `json:"id" db:"id"`
 	UserId    uuid.UUID `json:"userId" db:"user_id"`
 	Items     string    `json:"items" db:"items"` // contains a json string
-	CreatedAt string    `json:"createdAt" db:"created_at"`
-	UpdatedAt string    `json:"updatedAt" db:"updated_at"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
 }
 
 func (upl *UserInputProductList) String() string {
@@ -86,7 +125,11 @@ func (upl *UserInputProductList) String() string {
 }
 
 type UserInputListPayload struct {
-	List string `json:"list"`
+	List []struct {
+		Item     string          `json:"item"`
+		Quantity float64         `json:"quantity"`
+		Unit     UNIT_OF_MEASURE `json:"unit"`
+	} `json:"list"`
 }
 
 func (d *UserInputListPayload) String() string {

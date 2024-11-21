@@ -157,7 +157,7 @@ func (ss *StoreService) GetStoreHandler(w http.ResponseWriter, r *http.Request) 
 	        NO RESOURCE FOUND ERROR
 	*/
 	if storeId := r.PathValue("id"); storeId != "" {
-		store, err := ss.storeRepository.GetById(ctx, "storeId")
+		store, err := ss.storeRepository.GetById(ctx, storeId)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

@@ -30,7 +30,17 @@ func (repo *StoreRepo) Add(ctx context.Context, s *types.StoreSignUpPayload) (*t
 	query := `
     INSERT INTO store (store_username, store_name, store_address, store_email, store_contact_number, password_digest, store_web_url)
     VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING id, store_username, store_name, store_address, store_email, store_contact_number, password_digest, store_web_url
+    RETURNING 
+			id, 
+    		store_username, 
+    		store_name, 
+    		store_address, 
+    		store_email,
+    		store_contact_number, 
+    		store_web_url, 
+    		password_digest,
+    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
+    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude
   `
 	var store types.Store
 
@@ -44,37 +54,6 @@ func (repo *StoreRepo) Add(ctx context.Context, s *types.StoreSignUpPayload) (*t
 		s.ContactNumber,
 		s.Password,
 		s.WebURL,
-	)
-
-	if err := row.Scan(
-		&store.Id,
-		&store.StoreUsername,
-		&store.StoreName,
-		&store.StoreEmail,
-		&store.StoreContactNumber,
-		&store.Password,
-		&store.StoreWebURL,
-	); err != nil {
-		return nil, err
-	} else {
-		return &store, nil
-	}
-}
-
-func (repo *StoreRepo) GetById(ctx context.Context, id string) (*types.Store, error) {
-	query := `
-    SELECT id, store_username, store_name, store_address, store_email,
-		       store_contact_number, store_web_url, password_digest,
-		       ST_Y(store_location) AS latitude, ST_X(store_location) AS longitude
-		FROM store
-		WHERE id = $1
-  `
-	var store types.Store
-
-	row := repo.storage.Pool.QueryRow(
-		ctx,
-		query,
-		id,
 	)
 
 	if err := row.Scan(
@@ -95,12 +74,64 @@ func (repo *StoreRepo) GetById(ctx context.Context, id string) (*types.Store, er
 	}
 }
 
+func (repo *StoreRepo) GetById(ctx context.Context, id string) (*types.Store, error) {
+	query := `
+    SELECT  
+			id, 
+    		store_username, 
+    		store_name, 
+    		store_address, 
+    		store_email,
+    		store_contact_number, 
+    		store_web_url, 
+    		password_digest,
+    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
+    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude,
+			store_address
+	FROM store
+	WHERE id = $1
+  `
+	var store types.Store
+
+	row := repo.storage.Pool.QueryRow(
+		ctx,
+		query,
+		id,
+	)
+
+	if err := row.Scan(
+		&store.Id,
+		&store.StoreUsername,
+		&store.StoreName,
+		&store.StoreAddress,
+		&store.StoreEmail,
+		&store.StoreContactNumber,
+		&store.StoreWebURL,
+		&store.Password,
+		&store.StoreLocation.Latitude,
+		&store.StoreLocation.Longitude,
+		&store.StoreLocation.GeoCode,
+	); err != nil {
+		return nil, err
+	} else {
+		return &store, nil
+	}
+}
+
 func (repo *StoreRepo) GetBy(ctx context.Context, key string, value any) (*types.Store, error) {
 
 	query := fmt.Sprintf(
-		`SELECT id, store_username, store_name, store_address, store_email,
-		       store_contact_number, store_web_url, password_digest,
-		       ST_Y(store_location) AS latitude, ST_X(store_location) AS longitude
+		`SELECT	
+    		id, 
+    		store_username, 
+    		store_name, 
+    		store_address, 
+    		store_email,
+    		store_contact_number, 
+    		store_web_url, 
+    		password_digest,
+    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
+    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude
 		FROM store
 		WHERE %s = $1`, key,
 	)
@@ -133,10 +164,19 @@ func (repo *StoreRepo) GetBy(ctx context.Context, key string, value any) (*types
 
 func (repo *StoreRepo) GetAll(ctx context.Context) (*[]types.Store, error) {
 	query :=
-		`SELECT id, store_username, store_name, store_address, store_email,
-		       store_contact_number, store_web_url, password_digest,
-		       ST_Y(store_location) AS latitude, ST_X(store_location) AS longitude
-		FROM store`
+		`SELECT 
+    		id, 
+    		store_username, 
+    		store_name, 
+    		store_address, 
+    		store_email,
+    		store_contact_number, 
+    		store_web_url, 
+    		password_digest,
+    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
+    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude
+		FROM 
+    		store;`
 
 	if rows, err := repo.storage.Pool.Query(
 		ctx,
@@ -185,16 +225,20 @@ func (repo *StoreRepo) Update(ctx context.Context, id string, s *types.StoreUpda
       store_name = $1,
       store_email = $2,
       store_contact_number = $3,
-      store_username = $4 WHERE id = $5
+      store_username = $4,
+	  store_web_url = $5
+	WHERE id = $6
     RETURNING
-      id,
-      store_username,
-      store_name,
-      store_address,
-      store_email,
-      store_contact_number,
-      password_digest,
-      store_web_url
+    		id, 
+    		store_username, 
+    		store_name, 
+    		store_address, 
+    		store_email,
+    		store_contact_number, 
+    		store_web_url, 
+    		password_digest,
+    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
+    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude
   `
 	var store types.Store
 	if err := repo.storage.Pool.QueryRow(
@@ -204,14 +248,19 @@ func (repo *StoreRepo) Update(ctx context.Context, id string, s *types.StoreUpda
 		s.StoreEmail,
 		s.StoreContactNumber,
 		s.StoreUsername,
+		s.StoreWebURL,
 		id,
 	).Scan(
 		&store.Id,
 		&store.StoreUsername,
 		&store.StoreName,
 		&store.StoreAddress,
+		&store.StoreEmail,
 		&store.StoreContactNumber,
+		&store.StoreWebURL,
 		&store.Password,
+		&store.StoreLocation.Latitude,
+		&store.StoreLocation.Longitude,
 	); err != nil {
 		return nil, err
 	} else {
@@ -222,19 +271,21 @@ func (repo *StoreRepo) Update(ctx context.Context, id string, s *types.StoreUpda
 func (repo *StoreRepo) UpdateLocation(ctx context.Context, id string, location *types.GeoPoint) (*types.Store, error) {
 	query := `
     UPDATE store SET
-      store_location = ST_SetSRID(ST_MakePoint($1, $2), 4326)
-    WHERE id = $3
-		RETURNING
-      id,
-      store_username,
-      store_name,
-      store_address,
-      store_email,
-		  store_contact_number,
-      store_web_url,
-      password_digest,
-		  ST_Y(store_location) AS latitude,
-      ST_X(store_location) AS longitude
+	store_location_point = ST_SetSRID(ST_MakePoint($1, $2), 4326),
+	store_address = $3
+    WHERE id = $4
+	RETURNING
+    		id, 
+    		store_username, 
+    		store_name, 
+    		store_address, 
+    		store_email,
+    		store_contact_number, 
+    		store_web_url, 
+    		password_digest,
+    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
+    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude,
+			store_address
   `
 	var store types.Store
 	if err := repo.storage.Pool.QueryRow(
@@ -242,6 +293,7 @@ func (repo *StoreRepo) UpdateLocation(ctx context.Context, id string, location *
 		query,
 		location.Latitude,
 		location.Longitude,
+		location.GeoCode,
 		id,
 	).Scan(
 		&store.Id,
@@ -250,10 +302,11 @@ func (repo *StoreRepo) UpdateLocation(ctx context.Context, id string, location *
 		&store.StoreAddress,
 		&store.StoreEmail,
 		&store.StoreContactNumber,
-		&store.Password,
 		&store.StoreWebURL,
+		&store.Password,
 		&store.StoreLocation.Latitude,
 		&store.StoreLocation.Longitude,
+		&store.StoreLocation.GeoCode,
 	); err != nil {
 		return nil, err
 	} else {

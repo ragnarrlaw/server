@@ -11,6 +11,7 @@ func (ps *ProductService) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("DELETE /store/{storeId}/product/{productId}", ps.RemoveProductHandler)
 
 	// Discount routes
+	router.HandleFunc("GET /store/{storeId}/product/{productId}/discount", ps.GetProductDiscountsHandler)
 	router.HandleFunc("POST /store/{storeId}/product/{productId}/discount", ps.AddProductDiscountHandler)
 	router.HandleFunc("PATCH /store/{storeId}/product/{productId}/discount/{discountId}", ps.UpdateProductDiscountHandler)
 	router.HandleFunc("DELETE /store/{storeId}/product/{productId}/discount/{discountId}", ps.RemoveProductDiscountHandler)

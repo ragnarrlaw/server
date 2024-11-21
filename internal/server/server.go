@@ -14,6 +14,8 @@ import (
 	"github.com/raganrrlaw/server/internal/middleware"
 	authservice "github.com/raganrrlaw/server/internal/services/auth_service"
 	authrepository "github.com/raganrrlaw/server/internal/services/auth_service/auth_repository"
+	productservice "github.com/raganrrlaw/server/internal/services/product_service"
+	productrepository "github.com/raganrrlaw/server/internal/services/product_service/product_repository"
 	publicservice "github.com/raganrrlaw/server/internal/services/public_service"
 	storeservice "github.com/raganrrlaw/server/internal/services/store_service"
 	storerepository "github.com/raganrrlaw/server/internal/services/store_service/store_repository"
@@ -60,12 +62,15 @@ func (s *Server) Run() {
 	userRepo := userrepository.NewUserRepo(s.storage)
 	storeRepo := storerepository.NewStoreRepo(s.storage)
 	authRepo := authrepository.NewAuthRepo(s.storage)
+	productRepo := productrepository.NewProductRepo(s.storage)
 
 	// initialize the services
 	userService := userservice.NewUserService(userRepo)
 	userService.RegisterRoutes(router)
 	storeService := storeservice.NewStoreService(storeRepo)
 	storeService.RegisterRoutes(router)
+	productService := productservice.NewProductService(productRepo)
+	productService.RegisterRoutes(router)
 	authService := authservice.NewAuthService(authRepo, userRepo, storeRepo)
 	authService.RegisterRoutes(router)
 

@@ -14,6 +14,7 @@ type StoreSignUpPayload struct {
 	ContactNumber string `json:"contactNumber"`
 	WebURL        string `json:"storeWebUrl"`
 	Password      string `json:"password"`
+	RePassword    string `json:"rePassword"`
 }
 
 type StoreLoginPayload struct {
