@@ -118,8 +118,26 @@ func (as *AuthService) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO: Add the user role here
-func (as *AuthService) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+func (as *AuthService) StoreSignUpHandler(w http.ResponseWriter, r *http.Request) {
+	var payload types.StoreSignUpPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+	} else {
+		if digest, err := utils.HashPassword(payload.Password); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			payload.Password = digest
+			_, err := as.storeRepo.Add(r.Context(), &payload)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusCreated)
+			}
+		}
+	}
+}
+
+func (as *AuthService) UserSignUpHandler(w http.ResponseWriter, r *http.Request) {
 	var payload types.UserSignUpPayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
@@ -129,16 +147,11 @@ func (as *AuthService) SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
 		payload.Password = digest
-		user, err := as.userRepo.Add(r.Context(), &payload)
+		_, err := as.userRepo.Add(r.Context(), &payload)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
-			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusCreated)
-			encoder := json.NewEncoder(w)
-			if err := encoder.Encode(user); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
 		}
 	}
 }
