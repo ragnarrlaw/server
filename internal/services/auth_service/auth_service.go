@@ -2,7 +2,6 @@ package authservice
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -52,22 +51,22 @@ func (as *AuthService) LoginHandler(w http.ResponseWriter, r *http.Request) {
 						}, types.UserEntity); err != nil {
 							http.Error(w, err.Error(), http.StatusInternalServerError)
 						} else {
-							w.Header().Set("Content-Type", "application/json")
-							w.WriteHeader(http.StatusCreated)
-							http.SetCookie(w, &http.Cookie{
-								Name:     "token",
-								Value:    refresh_token,
-								HttpOnly: false,
-								Secure:   false,
-								Path:     "/",
-								Expires:  time.Now().Add(time.Hour * 24 * 7),
-							})
-							encoder := json.NewEncoder(w)
-							if err := encoder.Encode(types.Token{
+							if b, err := json.Marshal(types.Token{
 								Type:  "Bearer",
 								Token: access_token,
 							}); err != nil {
 								http.Error(w, err.Error(), http.StatusInternalServerError)
+							} else {
+								w.Header().Set("Content-Type", "application/json")
+								http.SetCookie(w, &http.Cookie{
+									Name:     "refresh_token",
+									Value:    refresh_token,
+									Path:     "/",
+									HttpOnly: true,
+									Expires:  time.Now().Add(time.Hour * 24 * 7),
+								})
+								w.WriteHeader(http.StatusCreated)
+								w.Write(b)
 							}
 						}
 					}
@@ -90,22 +89,22 @@ func (as *AuthService) LoginHandler(w http.ResponseWriter, r *http.Request) {
 						}, types.StoreEntity); err != nil {
 							http.Error(w, err.Error(), http.StatusInternalServerError)
 						} else {
-							w.Header().Set("Content-Type", "application/json")
-							w.WriteHeader(http.StatusCreated)
-							http.SetCookie(w, &http.Cookie{
-								Name:     "refresh_token",
-								Value:    refresh_token,
-								HttpOnly: true,
-								Secure:   false,
-								Path:     "/",
-								Expires:  time.Now().Add(time.Hour * 24),
-							})
-							encoder := json.NewEncoder(w)
-							if err := encoder.Encode(types.Token{
+							if b, err := json.Marshal(types.Token{
 								Type:  "Bearer",
 								Token: access_token,
 							}); err != nil {
 								http.Error(w, err.Error(), http.StatusInternalServerError)
+							} else {
+								w.Header().Set("Content-Type", "application/json")
+								http.SetCookie(w, &http.Cookie{
+									Name:     "refresh_token",
+									Value:    refresh_token,
+									Path:     "/",
+									HttpOnly: true,
+									Expires:  time.Now().Add(time.Hour * 24 * 7),
+								})
+								w.WriteHeader(http.StatusCreated)
+								w.Write(b)
 							}
 						}
 					}
@@ -150,11 +149,6 @@ func (as *AuthService) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	role := r.Context().Value(types.RoleKey).(types.EntityType)
 
 	if err := as.authRepo.RemoveTokensOfUser(r.Context(), id, role); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	_, err := as.userRepo.GetById(r.Context(), id)
-	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -217,13 +211,12 @@ func (as *AuthService) RefreshAccessTokenHandler(w http.ResponseWriter, r *http.
 
 func generateToken[T types.Identifiable](t *T, duration time.Duration, role types.EntityType) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.MapClaims{
-		"_id":  (*t).GetId(),
-		"sub":  (*t).GetUsername(),
-		"exp":  time.Now().Add(duration).Unix(),
-		"role": string(role),
+		string(types.IDKey):   (*t).GetId(),
+		"sub":                 (*t).GetUsername(),
+		"exp":                 time.Now().Add(duration).Unix(),
+		string(types.RoleKey): string(role),
 	})
 	if tokenString, err := token.SignedString([]byte(os.Getenv("JWT_TOKEN_SECRET"))); err != nil {
-		log.Printf(">>>> Error: %s\n", err.Error())
 		return ""
 	} else {
 		return tokenString
