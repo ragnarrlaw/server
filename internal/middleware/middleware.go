@@ -52,9 +52,9 @@ func LogRequestDetailsMiddleware(next http.Handler) http.Handler {
 
 func CorsMiddleware(next http.Handler) http.Handler {
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
-		// AllowCredentials: false, // set this up later
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+		AllowCredentials: true, // set this up later
 	})
 	return c.Handler(next)
 }
@@ -95,8 +95,8 @@ func ValidateAccessTokens(next http.Handler) http.Handler {
 			return
 		}
 
-		// Add user ID to the context
 		ctx := context.WithValue(r.Context(), types.IDKey, claims.Id)
+		ctx = context.WithValue(ctx, types.RoleKey, claims.Role)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -130,6 +130,7 @@ func ValidateRefreshTokens(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), types.IDKey, claims.Id)
+		ctx = context.WithValue(ctx, types.RoleKey, claims.Role)
 		ctx = context.WithValue(ctx, refreshToken, refreshToken.Value)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
