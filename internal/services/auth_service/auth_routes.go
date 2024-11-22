@@ -8,7 +8,8 @@ import (
 
 func (as *AuthService) RegisterRoutes(router *http.ServeMux) {
 	router.HandleFunc("POST /login", as.LoginHandler)
-	router.HandleFunc("POST /register", as.SignUpHandler)
+	router.HandleFunc("POST /user/register", as.UserSignUpHandler)
+	router.HandleFunc("POST /store/register", as.StoreSignUpHandler)
 	router.Handle("POST /logout",
 		middleware.ValidateAccessTokens(
 			middleware.ValidateRefreshTokens(
