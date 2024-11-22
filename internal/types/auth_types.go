@@ -11,10 +11,16 @@ import (
 type ContextKey string
 
 const (
-	IDKey           ContextKey = "_id"
+	// user id key
+	IDKey ContextKey = "_id"
+	// refresh token key
 	RefreshTokenKey ContextKey = "refresh_token"
-	AccessTokenKey  ContextKey = "access_token"
-	RoleKey         ContextKey = "_role"
+	// access token key
+	AccessTokenKey ContextKey = "access_token"
+	// role key
+	RoleKey ContextKey = "_role"
+	// refresh token key id
+	RefreshTokenKeyId ContextKey = "refresh_token_id"
 )
 
 type EntityType string
@@ -40,7 +46,7 @@ func (t *Token) String() string {
 }
 
 type TokenClaims struct {
-	Id   string     `json:"user_id"`
+	Id   string     `json:"_id"`
 	Role EntityType `json:"role"`
 	jwt.RegisteredClaims
 }
