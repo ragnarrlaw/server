@@ -96,7 +96,9 @@ func (as *AuthService) LoginHandler(w http.ResponseWriter, r *http.Request) {
 								Name:     "refresh_token",
 								Value:    refresh_token,
 								HttpOnly: true,
-								Expires:  time.Now().Add(time.Hour * 24 * 7),
+								Secure:   false,
+								Path:     "/",
+								Expires:  time.Now().Add(time.Hour * 24),
 							})
 							encoder := json.NewEncoder(w)
 							if err := encoder.Encode(types.Token{

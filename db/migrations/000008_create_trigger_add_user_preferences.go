@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/pressly/goose/v3"
-	"github.com/raganrrlaw/server/internal/utils"
 )
 
 func init() {
@@ -13,23 +12,15 @@ func init() {
 }
 
 func Up000008(ctx context.Context, db *sql.DB) error {
-	pd, err := utils.HashPassword("12345678")
-	if err != nil {
-		return err
-	}
 	query := `
-		INSERT INTO users (username, first_name, last_name, email, contact_number, password_digest) 
-		VALUES ($1, $2, $3, $4, $5, $6) 
+		CREATE OR REPLACE TRIGGER after_user_insert
+		AFTER INSERT ON users
+		FOR EACH ROW
+		EXECUTE FUNCTION add_user_preferences();
 	`
 	if _, err := db.ExecContext(
 		ctx,
 		query,
-		"sapumal_bandara",
-		"Sapumal",
-		"Bandara",
-		"sapumal_banadara@yahoo.com",
-		"0771002002",
-		pd,
 	); err != nil {
 		return err
 	}
@@ -37,7 +28,7 @@ func Up000008(ctx context.Context, db *sql.DB) error {
 }
 
 func Down000008(ctx context.Context, db *sql.DB) error {
-	query := "DELETE FROM users"
+	query := "DROP TRIGGER IF EXISTS after_user_insert ON users;"
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		return err
 	}

@@ -18,28 +18,18 @@ func Up000009(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 	query := `
-		INSERT INTO store (
-			store_username,
-			store_name,
-			store_address,
-			store_email,
-			store_contact_number,
-			password_digest,
-			store_web_url
-		)
-    	VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO users (username, first_name, last_name, email, contact_number, password_digest) 
+		VALUES ($1, $2, $3, $4, $5, $6) 
 	`
-
 	if _, err := db.ExecContext(
 		ctx,
 		query,
-		"sk_stores",
-		"S.K. & Sons Stores",
-		"No, 016, Colombo 10, Sri Lanka",
-		"sk_stores@yahoo.com",
-		"0763445567",
+		"sapumal_bandara",
+		"Sapumal",
+		"Bandara",
+		"sapumal_banadara@yahoo.com",
+		"0771002002",
 		pd,
-		"localhost:9081",
 	); err != nil {
 		return err
 	}
@@ -47,7 +37,7 @@ func Up000009(ctx context.Context, db *sql.DB) error {
 }
 
 func Down000009(ctx context.Context, db *sql.DB) error {
-	query := "DELETE FROM store"
+	query := "DELETE FROM users"
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		return err
 	}
