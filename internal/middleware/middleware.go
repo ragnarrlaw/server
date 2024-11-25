@@ -11,7 +11,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/raganrrlaw/server/internal/types"
-	"github.com/rs/cors"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -51,12 +50,20 @@ func LogRequestDetailsMiddleware(next http.Handler) http.Handler {
 }
 
 func CorsMiddleware(next http.Handler) http.Handler {
-	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
-		AllowCredentials: true, // set this up later
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Add CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Handle preflight (OPTIONS) requests
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
 	})
-	return c.Handler(next)
 }
 
 // ValidateAccessTokens checks the validity of the access token
