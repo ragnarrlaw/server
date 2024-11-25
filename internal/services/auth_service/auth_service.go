@@ -52,6 +52,7 @@ func (as *AuthService) LoginHandler(w http.ResponseWriter, r *http.Request) {
 							http.Error(w, err.Error(), http.StatusInternalServerError)
 						} else {
 							if b, err := json.Marshal(types.Token{
+								Id:    user.Id.String(),
 								Type:  "Bearer",
 								Token: access_token,
 							}); err != nil {
@@ -90,6 +91,7 @@ func (as *AuthService) LoginHandler(w http.ResponseWriter, r *http.Request) {
 							http.Error(w, err.Error(), http.StatusInternalServerError)
 						} else {
 							if b, err := json.Marshal(types.Token{
+								Id:    store.Id.String(),
 								Type:  "Bearer",
 								Token: access_token,
 							}); err != nil {
