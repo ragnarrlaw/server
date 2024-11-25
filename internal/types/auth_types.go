@@ -37,6 +37,7 @@ type LoginPayload struct {
 }
 
 type Token struct {
+	Id    string `json:"id"`
 	Type  string `json:"type"`
 	Token string `json:"access_token"`
 }
