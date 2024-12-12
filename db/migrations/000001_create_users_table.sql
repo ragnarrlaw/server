@@ -29,7 +29,16 @@ CREATE TABLE user_shopping_lists (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE previous_user_recommendations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    recommendations JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- +goose Down
 DROP TABLE IF EXISTS user_shopping_lists;
 DROP TABLE IF EXISTS user_preferences;
+DROP TABLE IF EXISTS previous_user_recommendations;
 DROP TABLE IF EXISTS users;
