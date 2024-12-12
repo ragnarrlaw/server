@@ -12,19 +12,19 @@ CREATE TABLE category (
     FOREIGN KEY (parent_category_id) REFERENCES category(id) ON DELETE CASCADE
 );
 
-INSERT INTO category (category, parent_category_id) VALUES
-    ('Food & Beverages', NULL),
-    ('Dairy', (SELECT id FROM category WHERE category = 'Food & Beverages')),
-    ('Milk', (SELECT id FROM category WHERE category = 'Dairy')),
-    ('Electronics', NULL),
-    ('Phones', (SELECT id FROM category WHERE category = 'Electronics'));
-
 CREATE TABLE product (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
+    code VARCHAR(255),
+    name VARCHAR(1000) NOT NULL,
     description TEXT,
-    brand VARCHAR(255),
-    category_id UUID REFERENCES category(id),
+    brand VARCHAR(1000),
+    brand_tags TEXT,
+    category_id UUID DEFAULT NULL,
+    labels TEXT,
+    image_url TEXT,
+    product_quantity VARCHAR(255),
+    serving_size VARCHAR(255),
+    unit_of_measure VARCHAR(20) NOT NULL CHECK (unit_of_measure IN ('pcs', 'g', 'kg', 'ml', 'l')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -48,10 +48,10 @@ CREATE TABLE store_product (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     store_id UUID NOT NULL,
     product_id UUID NOT NULL,
-    price NUMERIC NOT NULL,
+    price_per_unit NUMERIC NOT NULL,
     currency VARCHAR(3) DEFAULT 'LKR',
-    unit_of_measurement VARCHAR(50) NOT NULL,
-    stock_quantity NUMERIC NOT NULL,
+    listed_unit_of_measure VARCHAR(20) NOT NULL CHECK (listed_unit_of_measure IN ('pcs', 'g', 'kg', 'ml', 'l')),
+    stock_quantity VARCHAR(20) NOT NULL CHECK (stock_quantity IN ('LIMITED_QUANTITY', 'AVAILABLE', 'NOT_AVAILABLE')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (store_id) REFERENCES store(id) ON DELETE CASCADE,
