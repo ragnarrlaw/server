@@ -17,6 +17,8 @@ import (
 	productservice "github.com/raganrrlaw/server/internal/services/product_service"
 	productrepository "github.com/raganrrlaw/server/internal/services/product_service/product_repository"
 	publicservice "github.com/raganrrlaw/server/internal/services/public_service"
+	recommenderservice "github.com/raganrrlaw/server/internal/services/recommender_service"
+	recommenderrepository "github.com/raganrrlaw/server/internal/services/recommender_service/recommender_repository"
 	storeservice "github.com/raganrrlaw/server/internal/services/store_service"
 	storerepository "github.com/raganrrlaw/server/internal/services/store_service/store_repository"
 	userservice "github.com/raganrrlaw/server/internal/services/user_service"
@@ -63,19 +65,20 @@ func (s *Server) Run() {
 	storeRepo := storerepository.NewStoreRepo(s.storage)
 	authRepo := authrepository.NewAuthRepo(s.storage)
 	productRepo := productrepository.NewProductRepo(s.storage)
+	recommenderRepo := recommenderrepository.NewRecommenderRepo(s.storage)
 
 	// initialize the services
+	publicservice.RegisterRoutes(router)
 	userService := userservice.NewUserService(userRepo)
 	userService.RegisterRoutes(router)
 	storeService := storeservice.NewStoreService(storeRepo)
 	storeService.RegisterRoutes(router)
 	productService := productservice.NewProductService(productRepo)
 	productService.RegisterRoutes(router)
+	recommenderService := recommenderservice.NewRecommenderService(recommenderRepo)
+	recommenderService.RegisterRoutes(router)
 	authService := authservice.NewAuthService(authRepo, userRepo, storeRepo)
 	authService.RegisterRoutes(router)
-
-	// initialize the public services here
-	publicservice.RegisterRoutes(router)
 
 	// initialize the services here
 	routerV1 := http.NewServeMux()
