@@ -17,6 +17,7 @@ import (
 
 const FILTERED_DATA string = "./db/migrations/filtered_product_sample.csv"
 const LEN_UNITS_OF_MEASURE int8 = 5
+
 var UNITS_OF_MEASURE [LEN_UNITS_OF_MEASURE]string = [LEN_UNITS_OF_MEASURE]string{"pcs", "kg", "g", "ml", "l"}
 
 func init() {
@@ -39,7 +40,7 @@ func Up000011(ctx context.Context, db *sql.Tx) error {
 
 	query := `INSERT INTO product (name, brand, brand_tags, category_id, labels, product_quantity, image_url, serving_size, unit_of_measure) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
-  r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	if _, err := parser.Read(); err == io.EOF {
 		return errors.New("empty file provided")
