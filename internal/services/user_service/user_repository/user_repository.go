@@ -5,28 +5,16 @@ import (
 	"fmt"
 
 	database "github.com/raganrrlaw/server/db/database"
-	"github.com/raganrrlaw/server/internal/types"
+	"github.com/raganrrlaw/server/internal/types/search"
+	"github.com/raganrrlaw/server/internal/types/user"
 )
 
 type UserRepository interface {
 	// user
-	Add(context.Context, *types.UserSignUpPayload) (*types.User, error)
-	GetById(context.Context, string) (*types.User, error)
-	GetBy(context.Context, string, any) (*types.User, error)
-	GetAll(context.Context) (*[]types.User, error)
-	Remove(context.Context, []string) error
-	Update(context.Context, string, *types.UserUpdatePayload) (*types.User, error)
-
-	// user preferences
-	GetUserPreferences(context.Context, string) (*types.UserPreferences, error)
-	UpdateUserPreferences(context.Context, string, *types.UserPreferencesPayload) (*types.UserPreferences, error)
-
-	// user input lists
-	GetUserInputLists(context.Context, string) (*[]types.UserInputProductList, error)
-	GetUserInputList(context.Context, string, string) (*types.UserInputProductList, error)
-	AddUserInputList(context.Context, string, *types.UserInputListPayload) (*types.UserInputProductList, error)
-	UpdateUserInputLists(context.Context, string, string, *types.UserInputListPayload) (*types.UserInputProductList, error)
-	RemoveUserInputLists(context.Context, string, []string) error
+	GetById(context.Context, string) (*user.User, error)
+	GetBy(context.Context, string, any) ([]user.User, error)
+	Get(context.Context) ([]user.User, error)
+	GetTotalNumberOfUsers(context.Context) (uint, error)
 }
 
 type UserRepo struct {
@@ -37,44 +25,27 @@ func NewUserRepo(storage *database.Storage) UserRepository {
 	return &UserRepo{storage: storage}
 }
 
-func (repo *UserRepo) Add(ctx context.Context, u *types.UserSignUpPayload) (*types.User, error) {
+func (repo *UserRepo) GetTotalNumberOfUsers(ctx context.Context) (uint, error) {
 	query := `
-		INSERT INTO users (username, first_name, last_name, email, contact_number, password_digest) 
-		VALUES ($1, $2, $3, $4, $5, $6) 
-		RETURNING id, username, first_name, last_name, email, contact_number, password_digest
+	SELECT COUNT(id) FROM users;
 	`
-	var user types.User
+	var total uint
 	row := repo.storage.Pool.QueryRow(
 		ctx,
 		query,
-		u.Username,
-		u.FirstName,
-		u.LastName,
-		u.Email,
-		u.ContactNumber,
-		u.Password,
 	)
-	if err := row.Scan(
-		&user.Id,
-		&user.Username,
-		&user.FirstName,
-		&user.LastName,
-		&user.Email,
-		&user.ContactNumber,
-		&user.Password,
-	); err != nil {
-		return nil, err
-	} else {
-		return &user, nil
+	if err := row.Scan(&total); err != nil {
+		return 0, err
 	}
+	return total, nil
 }
 
-func (repo *UserRepo) GetById(ctx context.Context, id string) (*types.User, error) {
+func (repo *UserRepo) GetById(ctx context.Context, id string) (*user.User, error) {
 	query := `
-		SELECT id, username, first_name, last_name, email, contact_number, password_digest 
+		SELECT id, username, first_name, last_name, email, contact_number, password_digest, created_at, updated_at
 		FROM users WHERE id = $1
 	`
-	var user types.User
+	var user user.User
 
 	if err := repo.storage.Pool.QueryRow(
 		ctx,
@@ -83,11 +54,13 @@ func (repo *UserRepo) GetById(ctx context.Context, id string) (*types.User, erro
 	).Scan(
 		&user.Id,
 		&user.Username,
-		&user.FirstName,
+		&user.FistName,
 		&user.LastName,
 		&user.Email,
 		&user.ContactNumber,
-		&user.Password,
+		&user.PasswordDigest,
+		&user.CreatedAt,
+		&user.UpdatedAt,
 	); err != nil {
 		return nil, err
 	} else {
@@ -95,265 +68,78 @@ func (repo *UserRepo) GetById(ctx context.Context, id string) (*types.User, erro
 	}
 }
 
-func (repo *UserRepo) GetBy(ctx context.Context, field string, value any) (*types.User, error) {
+func (repo *UserRepo) GetBy(ctx context.Context, field string, value any) ([]user.User, error) {
+	params := ctx.Value(search.SearchKey).(search.Paginate)
 	query := fmt.Sprintf(`
-		SELECT id, username, first_name, last_name, email,contact_number, password_digest
-		FROM users WHERE %s = $1
+		SELECT id, username, first_name, last_name, email, contact_number, password_digest, created_at, updated_at
+		FROM users WHERE %s = $1 OFFSET $2 LIMIT $3
 	`,
 		field,
 	)
-	var user types.User
+	var users []user.User
 
-	if err := repo.storage.Pool.QueryRow(
+	rows, err := repo.storage.Pool.Query(
 		ctx,
 		query,
 		value,
-	).Scan(
-		&user.Id,
-		&user.Username,
-		&user.FirstName,
-		&user.LastName,
-		&user.Email,
-		&user.ContactNumber,
-		&user.Password,
-	); err != nil {
+		params.Offset,
+		params.Limit,
+	)
+	if err != nil {
 		return nil, err
-	} else {
-		return &user, nil
 	}
+	for rows.Next() {
+		var user user.User
+		if err := rows.Scan(
+			&user.Id,
+			&user.Username,
+			&user.FistName,
+			&user.LastName,
+			&user.Email,
+			&user.ContactNumber,
+			&user.PasswordDigest,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }
 
-func (repo *UserRepo) GetAll(ctx context.Context) (*[]types.User, error) {
+func (repo *UserRepo) Get(ctx context.Context) ([]user.User, error) {
+	params := ctx.Value(search.SearchKey).(search.Paginate)
 	query := `
-		SELECT id, username, first_name, last_name, email, contact_number, password_digest
-		FROM users
+		SELECT id, username, first_name, last_name, email, contact_number, password_digest, created_at, updated_at
+		FROM users OFFSET $1 LIMIT $2
 	`
 	if rows, err := repo.storage.Pool.Query(
 		ctx,
 		query,
+		params.Offset,
+		params.Limit,
 	); err != nil {
 		return nil, err
 	} else {
-		var users []types.User
+		var users []user.User
 		for rows.Next() {
-			var user types.User
+			var user user.User
 			if err := rows.Scan(
 				&user.Id,
 				&user.Username,
-				&user.FirstName,
+				&user.FistName,
 				&user.LastName,
 				&user.Email,
 				&user.ContactNumber,
-				&user.Password,
+				&user.PasswordDigest,
+				&user.CreatedAt,
+				&user.UpdatedAt,
 			); err != nil {
 				return nil, err
 			}
 			users = append(users, user)
 		}
-		return &users, nil
-	}
-}
-
-func (repo *UserRepo) Remove(ctx context.Context, ids []string) error {
-	query := `DELETE FROM user WHERE id = ANY($1)`
-
-	if _, err := repo.storage.Pool.Exec(
-		ctx,
-		query,
-		ids,
-	); err != nil {
-		return err
-	} else {
-		return nil
-	}
-}
-
-func (repo *UserRepo) Update(ctx context.Context, id string, u *types.UserUpdatePayload) (*types.User, error) {
-	query := `
-		UPDATE users SET username = $1, first_name = $2, last_name = $3 WHERE id = $4
-		RETURNING id, username, first_name, last_name, email, contact_number
-	`
-	var user types.User
-
-	row := repo.storage.Pool.QueryRow(
-		ctx,
-		query,
-		u.Username,
-		u.FirstName,
-		u.LastName,
-		id,
-	)
-
-	if err := row.Scan(
-		&user.Id,
-		&user.Username,
-		&user.FirstName,
-		&user.LastName,
-		&user.Email,
-		&user.ContactNumber,
-	); err != nil {
-		return nil, err
-	} else {
-		return &user, nil
-	}
-}
-
-func (repo *UserRepo) GetUserPreferences(ctx context.Context, userId string) (*types.UserPreferences, error) {
-	query := `
-		SELECT user_id, preferences, created_at, updated_at FROM user_preferences WHERE user_id = $1 
-	`
-	var userPreferences types.UserPreferences
-	if err := repo.storage.Pool.QueryRow(
-		ctx,
-		query,
-		userId,
-	).Scan(
-		&userPreferences.UserId,
-		&userPreferences.Preferences,
-		&userPreferences.CreatedAt,
-		&userPreferences.UpdateAt,
-	); err != nil {
-		return nil, err
-	} else {
-		return &userPreferences, nil
-	}
-}
-
-func (repo *UserRepo) UpdateUserPreferences(ctx context.Context, userId string, preferences *types.UserPreferencesPayload) (*types.UserPreferences, error) {
-	query := `
-		UPDATE user_preferences SET preferences = $1 WHERE user_id = $2
-		RETURNING user_id, preferences, created_at, updated_at
-	`
-	var userPreferences types.UserPreferences
-	if err := repo.storage.Pool.QueryRow(
-		ctx,
-		query,
-		preferences.Preferences,
-		userId,
-	).Scan(
-		&userPreferences.UserId,
-		&userPreferences.Preferences,
-		&userPreferences.CreatedAt,
-		&userPreferences.UpdateAt,
-	); err != nil {
-		return nil, err
-	} else {
-		return &userPreferences, nil
-	}
-}
-
-func (repo *UserRepo) GetUserInputLists(ctx context.Context, userId string) (*[]types.UserInputProductList, error) {
-	query := `
-		SELECT id, user_id, items, created_at, updated_at FROM user_shopping_lists WHERE user_id = $1
-	`
-	var userInputProductList []types.UserInputProductList
-	if rows, err := repo.storage.Pool.Query(
-		ctx,
-		query,
-		userId,
-	); err != nil {
-		return nil, err
-	} else {
-		for rows.Next() {
-			var list types.UserInputProductList
-			if err := rows.Scan(
-				&list.Id,
-				&list.UserId,
-				&list.Items,
-				&list.CreatedAt,
-				&list.UpdatedAt,
-			); err != nil {
-				return nil, err
-			}
-			userInputProductList = append(userInputProductList, list)
-		}
-		return &userInputProductList, nil
-	}
-}
-
-func (repo *UserRepo) GetUserInputList(ctx context.Context, userId string, listId string) (*types.UserInputProductList, error) {
-	query := `
-		SELECT id, user_id, items, created_at, updated_at FROM user_shopping_lists WHERE user_id = $1 AND id = $2
-	`
-	var userInputProductList types.UserInputProductList
-	if err := repo.storage.Pool.QueryRow(
-		ctx,
-		query,
-		userId,
-		listId,
-	).Scan(
-		&userInputProductList.Id,
-		&userInputProductList.UserId,
-		&userInputProductList.Items,
-		&userInputProductList.CreatedAt,
-		&userInputProductList.UpdatedAt,
-	); err != nil {
-		return nil, err
-	} else {
-		return &userInputProductList, nil
-	}
-}
-
-func (repo *UserRepo) AddUserInputList(ctx context.Context, userId string, list *types.UserInputListPayload) (*types.UserInputProductList, error) {
-	query := `
-		INSERT INTO user_shopping_lists (user_id, items) VALUES ($1, $2) RETURNING id, 
-		user_id, items, created_at, updated_at`
-	var userInputProductList types.UserInputProductList
-	if err := repo.storage.Pool.QueryRow(
-		ctx,
-		query,
-		userId,
-		list.List,
-	).Scan(
-		&userInputProductList.Id,
-		&userInputProductList.UserId,
-		&userInputProductList.Items,
-		&userInputProductList.CreatedAt,
-		&userInputProductList.UpdatedAt,
-	); err != nil {
-		return nil, err
-	} else {
-		return &userInputProductList, nil
-	}
-}
-
-func (repo *UserRepo) UpdateUserInputLists(ctx context.Context, userId string, listId string, list *types.UserInputListPayload) (*types.UserInputProductList, error) {
-	query := `
-		UPDATE user_shopping_lists SET items = $1 WHERE user_id = $2 AND id = $3
-		RETURNING id, user_id, items, created_at, updated_at
-	`
-	var userInputProductList types.UserInputProductList
-	if err := repo.storage.Pool.QueryRow(
-		ctx,
-		query,
-		list.List,
-		userId,
-		listId,
-	).Scan(
-		&userInputProductList.Id,
-		&userInputProductList.UserId,
-		&userInputProductList.Items,
-		&userInputProductList.CreatedAt,
-		&userInputProductList.UpdatedAt,
-	); err != nil {
-		return nil, err
-	} else {
-		return &userInputProductList, nil
-	}
-}
-
-func (repo *UserRepo) RemoveUserInputLists(ctx context.Context, userId string, listId []string) error {
-	query := `
-		DELETE FROM user_shopping_lists WHERE user_id = $1 AND id = ANY($2)
-	`
-	if _, err := repo.storage.Pool.Exec(
-		ctx,
-		query,
-		userId,
-		listId,
-	); err != nil {
-		return err
-	} else {
-		return nil
+		return users, nil
 	}
 }
