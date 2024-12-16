@@ -31,6 +31,11 @@ run: build
 	@echo "Running $(APP_NAME)..."
 	@$(BUILD_DIR)/$(APP_NAME)
 
+## Run with delve debugger session
+debug:
+	@echo "Running $(APP_NAME) with delve debugger..."
+	@dlv debug $(CMD_DIR)
+
 ## Run unit tests
 test:
 	@echo "Running tests..."
