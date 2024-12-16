@@ -5,17 +5,16 @@ import (
 	"fmt"
 
 	database "github.com/raganrrlaw/server/db/database"
-	"github.com/raganrrlaw/server/internal/types"
+	"github.com/raganrrlaw/server/internal/types/search"
+	"github.com/raganrrlaw/server/internal/types/store"
 )
 
 type StoreRepository interface {
-	Add(context.Context, *types.StoreSignUpPayload) (*types.Store, error)
-	GetById(context.Context, string) (*types.Store, error)
-	GetBy(context.Context, string, any) (*types.Store, error)
-	GetAll(context.Context) (*[]types.Store, error)
-	Remove(context.Context, []string) error
-	Update(context.Context, string, *types.StoreUpdatePayload) (*types.Store, error)
-	UpdateLocation(context.Context, string, *types.GeoPoint) (*types.Store, error)
+	GetById(context.Context, string) (*store.Store, error)
+	GetBy(context.Context, string, any) ([]store.Store, error)
+	Get(context.Context) ([]store.Store, error)
+	Stats(context.Context) ([]store.StoreStat, error)
+	GetTotalNumberOfStores(context.Context) (uint, error)
 }
 
 type StoreRepo struct {
@@ -26,72 +25,41 @@ func NewStoreRepo(storage *database.Storage) StoreRepository {
 	return &StoreRepo{storage: storage}
 }
 
-func (repo *StoreRepo) Add(ctx context.Context, s *types.StoreSignUpPayload) (*types.Store, error) {
+func (repo *StoreRepo) GetTotalNumberOfStores(ctx context.Context) (uint, error) {
 	query := `
-    INSERT INTO store (store_username, store_name, store_address, store_email, store_contact_number, password_digest, store_web_url)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING 
-			id, 
-    		store_username, 
-    		store_name, 
-    		store_address, 
-    		store_email,
-    		store_contact_number, 
-    		store_web_url, 
-    		password_digest,
-    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
-    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude
-  `
-	var store types.Store
-
+	SELECT COUNT(id) FROM store;
+	`
+	var total uint
 	row := repo.storage.Pool.QueryRow(
 		ctx,
 		query,
-		s.Username,
-		s.StoreName,
-		s.Address,
-		s.Email,
-		s.ContactNumber,
-		s.Password,
-		s.WebURL,
 	)
-
-	if err := row.Scan(
-		&store.Id,
-		&store.StoreUsername,
-		&store.StoreName,
-		&store.StoreAddress,
-		&store.StoreEmail,
-		&store.StoreContactNumber,
-		&store.StoreWebURL,
-		&store.Password,
-		&store.StoreLocation.Latitude,
-		&store.StoreLocation.Longitude,
-	); err != nil {
-		return nil, err
-	} else {
-		return &store, nil
+	if err := row.Scan(&total); err != nil {
+		return 0, err
 	}
+	return total, nil
 }
 
-func (repo *StoreRepo) GetById(ctx context.Context, id string) (*types.Store, error) {
+func (repo *StoreRepo) GetById(ctx context.Context, id string) (*store.Store, error) {
 	query := `
     SELECT  
-			id, 
-    		store_username, 
-    		store_name, 
-    		store_address, 
-    		store_email,
-    		store_contact_number, 
-    		store_web_url, 
-    		password_digest,
-    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
-    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude,
-			store_address
+		id, 
+    	username, 
+    	name, 
+    	address, 
+    	email,
+    	contact_number, 
+      discounts,
+      web_url, 
+    	password_digest,
+    	COALESCE(ST_Y(GEOMETRY(location_point)), 0) AS latitude, 
+    	COALESCE(ST_X(GEOMETRY(location_point)), 0) AS longitude,
+      created_at,
+      updated_at
 	FROM store
 	WHERE id = $1
   `
-	var store types.Store
+	var store store.Store
 
 	row := repo.storage.Pool.QueryRow(
 		ctx,
@@ -101,16 +69,18 @@ func (repo *StoreRepo) GetById(ctx context.Context, id string) (*types.Store, er
 
 	if err := row.Scan(
 		&store.Id,
-		&store.StoreUsername,
-		&store.StoreName,
-		&store.StoreAddress,
-		&store.StoreEmail,
-		&store.StoreContactNumber,
-		&store.StoreWebURL,
-		&store.Password,
-		&store.StoreLocation.Latitude,
-		&store.StoreLocation.Longitude,
-		&store.StoreLocation.GeoCode,
+		&store.Username,
+		&store.Name,
+		&store.Address,
+		&store.Email,
+		&store.ContactNumber,
+		&store.Discounts,
+		&store.WebUrl,
+		&store.PasswordDigest,
+		&store.LocationPoint.Latitude,
+		&store.LocationPoint.Longitude,
+		&store.CreatedAt,
+		&store.UpdatedAt,
 	); err != nil {
 		return nil, err
 	} else {
@@ -118,198 +88,167 @@ func (repo *StoreRepo) GetById(ctx context.Context, id string) (*types.Store, er
 	}
 }
 
-func (repo *StoreRepo) GetBy(ctx context.Context, key string, value any) (*types.Store, error) {
-
+func (repo *StoreRepo) GetBy(ctx context.Context, key string, value any) ([]store.Store, error) {
+	params := ctx.Value(search.SearchKey).(search.Paginate)
 	query := fmt.Sprintf(
 		`SELECT	
-    		id, 
-    		store_username, 
-    		store_name, 
-    		store_address, 
-    		store_email,
-    		store_contact_number, 
-    		store_web_url, 
-    		password_digest,
-    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
-    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude
-		FROM store
-		WHERE %s = $1`, key,
+ 		id, 
+    	username, 
+    	name, 
+    	address, 
+    	email,
+    	contact_number, 
+      discounts,
+      web_url, 
+    	password_digest,
+    	COALESCE(ST_Y(GEOMETRY(location_point)), 0) AS latitude, 
+    	COALESCE(ST_X(GEOMETRY(location_point)), 0) AS longitude,
+      created_at,
+      updated_at
+	FROM store
+		WHERE %s = $1
+    OFFSET $2 
+    LIMIT $3`,
+		key,
 	)
 
-	var store types.Store
-
-	row := repo.storage.Pool.QueryRow(
+	rows, err := repo.storage.Pool.Query(
 		ctx,
 		query,
 		value,
+		params.Offset,
+		params.Limit,
 	)
-
-	if err := row.Scan(
-		&store.Id,
-		&store.StoreUsername,
-		&store.StoreName,
-		&store.StoreAddress,
-		&store.StoreEmail,
-		&store.StoreContactNumber,
-		&store.StoreWebURL,
-		&store.Password,
-		&store.StoreLocation.Latitude,
-		&store.StoreLocation.Longitude,
-	); err != nil {
+	if err != nil {
 		return nil, err
-	} else {
-		return &store, nil
 	}
-}
 
-func (repo *StoreRepo) GetAll(ctx context.Context) (*[]types.Store, error) {
-	query :=
-		`SELECT 
-    		id, 
-    		store_username, 
-    		store_name, 
-    		store_address, 
-    		store_email,
-    		store_contact_number, 
-    		store_web_url, 
-    		password_digest,
-    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
-    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude
-		FROM 
-    		store;`
+	defer rows.Close()
 
-	if rows, err := repo.storage.Pool.Query(
-		ctx,
-		query,
-	); err != nil {
-		return nil, err
-	} else {
-		var stores []types.Store
-		for rows.Next() {
-			var store types.Store
-			if err := rows.Scan(
-				&store.Id,
-				&store.StoreUsername,
-				&store.StoreName,
-				&store.StoreAddress,
-				&store.StoreEmail,
-				&store.StoreContactNumber,
-				&store.StoreWebURL,
-				&store.Password,
-				&store.StoreLocation.Latitude,
-				&store.StoreLocation.Longitude,
-			); err != nil {
-				return nil, err
-			}
-			stores = append(stores, store)
+	var stores []store.Store
+
+	for rows.Next() {
+		var store store.Store
+		if err := rows.Scan(
+			&store.Id,
+			&store.Username,
+			&store.Name,
+			&store.Address,
+			&store.Email,
+			&store.ContactNumber,
+			&store.Discounts,
+			&store.WebUrl,
+			&store.PasswordDigest,
+			&store.LocationPoint.Latitude,
+			&store.LocationPoint.Longitude,
+			&store.CreatedAt,
+			&store.UpdatedAt,
+		); err != nil {
+			return nil, err
 		}
-		return &stores, nil
+		stores = append(stores, store)
 	}
+	return stores, nil
 }
 
-func (repo *StoreRepo) Remove(ctx context.Context, ids []string) error {
-	query := `DELETE FROM store WHERE id = ANY($1)`
-	if _, err := repo.storage.Pool.Exec(
-		ctx,
-		query,
-		ids,
-	); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (repo *StoreRepo) Update(ctx context.Context, id string, s *types.StoreUpdatePayload) (*types.Store, error) {
+func (repo *StoreRepo) Get(ctx context.Context) ([]store.Store, error) {
+	params := ctx.Value(search.SearchKey).(search.Paginate)
 	query := `
-    UPDATE store SET
-      store_name = $1,
-      store_email = $2,
-      store_contact_number = $3,
-      store_username = $4,
-	  store_web_url = $5
-	WHERE id = $6
-    RETURNING
-    		id, 
-    		store_username, 
-    		store_name, 
-    		store_address, 
-    		store_email,
-    		store_contact_number, 
-    		store_web_url, 
-    		password_digest,
-    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
-    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude
-  `
-	var store types.Store
-	if err := repo.storage.Pool.QueryRow(
+    SELECT  
+			id, 
+    	username, 
+    	name, 
+    	address, 
+    	email,
+    	contact_number, 
+      discounts,
+      web_url, 
+    	password_digest,
+    	COALESCE(ST_Y(GEOMETRY(location_point)), 0) AS latitude, 
+    	COALESCE(ST_X(GEOMETRY(location_point)), 0) AS longitude,
+      created_at,
+      updated_at
+	FROM store
+  OFFSET $1
+  LIMIT $2`
+	rows, err := repo.storage.Pool.Query(
 		ctx,
 		query,
-		s.StoreName,
-		s.StoreEmail,
-		s.StoreContactNumber,
-		s.StoreUsername,
-		s.StoreWebURL,
-		id,
-	).Scan(
-		&store.Id,
-		&store.StoreUsername,
-		&store.StoreName,
-		&store.StoreAddress,
-		&store.StoreEmail,
-		&store.StoreContactNumber,
-		&store.StoreWebURL,
-		&store.Password,
-		&store.StoreLocation.Latitude,
-		&store.StoreLocation.Longitude,
-	); err != nil {
+		params.Offset,
+		params.Limit,
+	)
+	if err != nil {
 		return nil, err
-	} else {
-		return &store, nil
 	}
+	defer rows.Close()
+	var stores []store.Store
+	for rows.Next() {
+		var store store.Store
+		if err := rows.Scan(
+			&store.Id,
+			&store.Username,
+			&store.Name,
+			&store.Address,
+			&store.Email,
+			&store.ContactNumber,
+			&store.Discounts,
+			&store.WebUrl,
+			&store.PasswordDigest,
+			&store.LocationPoint.Latitude,
+			&store.LocationPoint.Longitude,
+			&store.CreatedAt,
+			&store.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		stores = append(stores, store)
+	}
+	return stores, nil
 }
 
-func (repo *StoreRepo) UpdateLocation(ctx context.Context, id string, location *types.GeoPoint) (*types.Store, error) {
+func (repo *StoreRepo) Stats(ctx context.Context) ([]store.StoreStat, error) {
 	query := `
-    UPDATE store SET
-	store_location_point = ST_SetSRID(ST_MakePoint($1, $2), 4326),
-	store_address = $3
-    WHERE id = $4
-	RETURNING
-    		id, 
-    		store_username, 
-    		store_name, 
-    		store_address, 
-    		store_email,
-    		store_contact_number, 
-    		store_web_url, 
-    		password_digest,
-    		COALESCE(ST_Y(GEOMETRY(store_location_point)), 0) AS latitude, 
-    		COALESCE(ST_X(GEOMETRY(store_location_point)), 0) AS longitude,
-			store_address
-  `
-	var store types.Store
-	if err := repo.storage.Pool.QueryRow(
+	SELECT
+    	s.name AS name, 
+    	s.address AS address, 
+      	s.discounts AS discounts,
+    	COALESCE(ST_Y(GEOMETRY(s.location_point)), 0) AS latitude, 
+    	COALESCE(ST_X(GEOMETRY(s.location_point)), 0) AS longitude,
+      	s.created_at AS created_at,
+		COUNT(sp.product_id) AS total_product_count,
+		COUNT(CASE WHEN sp.stock_quantity = 'LIMITED_QUANTITY' THEN 1 END) AS products_with_limited_quantity,
+		COUNT(CASE WHEN sp.stock_quantity = 'AVAILABLE' THEN 1 END) AS fully_available_products,
+		COUNT(CASE WHEN sp.stock_quantity = 'NOT_AVAILABLE' THEN 1 END) AS out_of_stock_products
+	FROM store s
+	JOIN store_product sp ON sp.store_id = s.id
+	GROUP BY s.id, s.name, s.address, s.discounts, s.location_point, s.created_at
+	`
+	rows, err := repo.storage.Pool.Query(
 		ctx,
 		query,
-		location.Latitude,
-		location.Longitude,
-		location.GeoCode,
-		id,
-	).Scan(
-		&store.Id,
-		&store.StoreUsername,
-		&store.StoreName,
-		&store.StoreAddress,
-		&store.StoreEmail,
-		&store.StoreContactNumber,
-		&store.StoreWebURL,
-		&store.Password,
-		&store.StoreLocation.Latitude,
-		&store.StoreLocation.Longitude,
-		&store.StoreLocation.GeoCode,
-	); err != nil {
+	)
+	if err != nil {
 		return nil, err
-	} else {
-		return &store, nil
 	}
+	defer rows.Close()
+	var storeStats []store.StoreStat
+	for rows.Next() {
+		var storeStat store.StoreStat
+		if err := rows.Scan(
+			&storeStat.Name,
+			&storeStat.Address,
+			&storeStat.Discounts,
+			&storeStat.Point.Latitude,
+			&storeStat.Point.Longitude,
+			&storeStat.CreatedAt,
+			&storeStat.TotalNumberOfProducts,
+			&storeStat.NumberOfLimitedStockProducts,
+			&storeStat.NumberOfAvailableProducts,
+			&storeStat.NumberOfOutOfStockProducts,
+		); err != nil {
+			return nil, err
+		}
+		storeStats = append(storeStats, storeStat)
+	}
+	return storeStats, nil
 }
