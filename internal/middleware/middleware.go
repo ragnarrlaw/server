@@ -2,15 +2,12 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"strings"
+	"strconv"
 
 	"github.com/fatih/color"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/raganrrlaw/server/internal/types"
+	"github.com/raganrrlaw/server/internal/types/search"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -66,88 +63,36 @@ func CorsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// ValidateAccessTokens checks the validity of the access token
-// TODO: Validate the login credentials based on the role here
-func ValidateAccessTokens(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "Authorization header is required", http.StatusUnauthorized)
-			return
-		}
-
-		// Expecting the format "Bearer <token>"
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
-			return
-		}
-
-		accessToken := parts[1]
-		claims := &types.TokenClaims{}
-		token, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return []byte(os.Getenv("JWT_TOKEN_SECRET")), nil
-		})
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		if !token.Valid {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), types.IDKey, claims.Id)
-		ctx = context.WithValue(ctx, types.RoleKey, claims.Role)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-// ValidateRefreshTokens checks the validity of the Refresh token
-// TODO: Validate the login id based on the type here
-func ValidateRefreshTokens(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		refreshToken, err := r.Cookie("refresh_token")
-		if err != nil {
-			http.Error(w, "Refresh token is required", http.StatusUnauthorized)
-			return
-		}
-
-		claims := &types.TokenClaims{}
-		token, err := jwt.ParseWithClaims(refreshToken.Value, claims, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return []byte(os.Getenv("JWT_TOKEN_SECRET")), nil
-		})
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		if !token.Valid {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), types.IDKey, claims.Id)
-		ctx = context.WithValue(ctx, types.RoleKey, claims.Role)
-		ctx = context.WithValue(ctx, refreshToken, refreshToken.Value)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
 func ContentTypeMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "Invalid content type. Only application/json is allowed", http.StatusUnsupportedMediaType)
 			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func QueryParameterParsingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			paginateParams := search.Paginate{}
+
+			limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+			if err != nil {
+				paginateParams.Limit = 10
+			} else {
+				paginateParams.Limit = limit
+			}
+
+			offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+			if err != nil {
+				paginateParams.Offset = 0
+			} else {
+				paginateParams.Offset = offset
+			}
+			context := context.WithValue(r.Context(), search.SearchKey, paginateParams)
+			r = r.WithContext(context)
 		}
 		next.ServeHTTP(w, r)
 	})
