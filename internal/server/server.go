@@ -12,8 +12,6 @@ import (
 	"github.com/raganrrlaw/server/config"
 	database "github.com/raganrrlaw/server/db/database"
 	"github.com/raganrrlaw/server/internal/middleware"
-	authservice "github.com/raganrrlaw/server/internal/services/auth_service"
-	authrepository "github.com/raganrrlaw/server/internal/services/auth_service/auth_repository"
 	productservice "github.com/raganrrlaw/server/internal/services/product_service"
 	productrepository "github.com/raganrrlaw/server/internal/services/product_service/product_repository"
 	publicservice "github.com/raganrrlaw/server/internal/services/public_service"
@@ -63,7 +61,6 @@ func (s *Server) Run() {
 	// initialize the repositories here
 	userRepo := userrepository.NewUserRepo(s.storage)
 	storeRepo := storerepository.NewStoreRepo(s.storage)
-	authRepo := authrepository.NewAuthRepo(s.storage)
 	productRepo := productrepository.NewProductRepo(s.storage)
 	recommenderRepo := recommenderrepository.NewRecommenderRepo(s.storage)
 
@@ -77,8 +74,6 @@ func (s *Server) Run() {
 	productService.RegisterRoutes(router)
 	recommenderService := recommenderservice.NewRecommenderService(recommenderRepo)
 	recommenderService.RegisterRoutes(router)
-	authService := authservice.NewAuthService(authRepo, userRepo, storeRepo)
-	authService.RegisterRoutes(router)
 
 	// initialize the services here
 	routerV1 := http.NewServeMux()
@@ -90,7 +85,9 @@ func (s *Server) Run() {
 		Addr: s.address,
 		Handler: middleware.CorsMiddleware(
 			middleware.LogRequestDetailsMiddleware(
-				router,
+				middleware.QueryParameterParsingMiddleware(
+					router,
+				),
 			),
 		), // wrap the router with the middleware here use(router)
 	}
