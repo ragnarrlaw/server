@@ -33,3 +33,9 @@ type StoreStat struct {
 	NumberOfAvailableProducts    int           `json:"numberOfAvailableProducts"`
 	NumberOfOutOfStockProducts   int           `json:"numberOfOutOfStockProducts"`
 }
+
+type FilterCriteria struct {
+	Name    string                 `json:"name"`
+	Ids     []string               `json:"ids"`
+	Feature geocode.GeoJsonFeature `json:"feature"`
+}
