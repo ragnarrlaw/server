@@ -55,6 +55,7 @@ type RecommendationItem struct {
 	StockQuantity         string    `json:"stockQuantity"`
 	ImageUrl              string    `json:"imageUrl"`
 	StandardUnitOfMeasure string    `json:"standardUnitOfMeasure"`
+	DiscountedPrice       float64   `json:"discountedProductPrice"`
 }
 
 func RegisterRecommendationItemType(ctx context.Context, conn *pgx.Conn) error {
