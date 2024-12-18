@@ -66,8 +66,8 @@ WHERE
     )
 	AND
 	sp.product_id = ANY($4)
-  AND
-  (sp.stock_quantity = 'AVAILABLE' OR sp.stock_quantity = 'LIMITED')
+  	AND
+  	(sp.stock_quantity = 'AVAILABLE' OR sp.stock_quantity = 'LIMITED_QUANTITY')
 GROUP BY 
     s.id;
   `
@@ -106,8 +106,6 @@ GROUP BY
 	return recommendations, nil
 }
 
-/*
- */
 func (repo *RecommenderRepo) LineStringSearch(
 	ctx context.Context,
 	payload *recommender.LineStringSearch,
@@ -165,8 +163,8 @@ WHERE
     )
 	AND
 	sp.product_id = ANY($2)
-  AND
-  (sp.stock_quantity = 'AVAILABLE' OR sp.stock_quantity = 'LIMITED')
+  	AND
+  	(sp.stock_quantity = 'AVAILABLE' OR sp.stock_quantity = 'LIMITED_QUANTITY')
 GROUP BY 
     s.id;
   `, lineString)
@@ -196,4 +194,19 @@ GROUP BY
 		recommendations = append(recommendations, recommendation)
 	}
 	return recommendations, nil
+}
+
+/* Implement the preprocessor */
+func preprocessor() {
+	panic("function not implemented")
+}
+
+/* Implement the single store mode */
+func singleStoreMode() {
+	panic("function not implemented")
+}
+
+/* Implement the multi store mode */
+func multiStoreMode() {
+	panic("function not implemented")
 }
