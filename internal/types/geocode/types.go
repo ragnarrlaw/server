@@ -53,12 +53,12 @@ func unmarshalPoint(point interface{}) ([]float64, error) {
 		return nil, fmt.Errorf("point is not valid")
 	}
 	cs := make([]float64, 0, len(p))
-	for i, c := range p {
+	for _, c := range p {
 		f, ok := c.(float64)
 		if !ok {
 			return nil, fmt.Errorf("%v is not a valid coordinate", c)
 		}
-		cs[i] = f
+		cs = append(cs, f)
 	}
 	return cs, nil
 }
@@ -69,12 +69,12 @@ func unmarshalMultiPoint(points interface{}) ([][]float64, error) {
 		return nil, fmt.Errorf("points are not valid")
 	}
 	cs := make([][]float64, 0, len(ps))
-	for i, p := range ps {
+	for _, p := range ps {
 		fs, err := unmarshalPoint(p)
 		if err != nil {
 			return nil, err
 		}
-		cs[i] = fs
+		cs = append(cs, fs)
 	}
 	return cs, nil
 }
@@ -93,12 +93,12 @@ func unmarshalMultiLineString(lines interface{}) ([][][]float64, error) {
 		return nil, fmt.Errorf("invalid multiple lines")
 	}
 	mls := make([][][]float64, 0, len(ls))
-	for i, sl := range ls {
+	for _, sl := range ls {
 		l, err := unmarshalLineString(sl)
 		if err != nil {
 			return nil, err
 		}
-		mls[i] = l
+		mls = append(mls, l)
 	}
 	return mls, nil
 }
@@ -109,7 +109,7 @@ func unmarshalPolygon(polygon interface{}) ([][][]float64, error) {
 		return nil, fmt.Errorf("invalid polygon type")
 	}
 	polygons := make([][][]float64, 0, len(ps))
-	for i, plygon := range ps {
+	for _, plygon := range ps {
 		ply, ok := plygon.([]interface{})
 		if !ok {
 			return nil, fmt.Errorf("invalid polygon type")
@@ -118,7 +118,7 @@ func unmarshalPolygon(polygon interface{}) ([][][]float64, error) {
 		if err != nil {
 			return nil, err
 		}
-		polygons[i] = p
+		polygons = append(polygons, p)
 	}
 	return polygons, nil
 }
@@ -129,7 +129,7 @@ func unmarshalMultiPolygon(polygons interface{}) ([][][][]float64, error) {
 		return nil, fmt.Errorf("invalid multi-polygon type")
 	}
 	ps := make([][][][]float64, 0, len(mps))
-	for i, mp := range mps {
+	for _, mp := range mps {
 		ply, ok := mp.([]interface{})
 		if !ok {
 			return nil, fmt.Errorf("invalid polygon type")
@@ -138,7 +138,7 @@ func unmarshalMultiPolygon(polygons interface{}) ([][][][]float64, error) {
 		if err != nil {
 			return nil, err
 		}
-		ps[i] = p
+		ps = append(ps, p)
 	}
 	return ps, nil
 }
@@ -211,7 +211,7 @@ func unmarshalGeometries(geoms interface{}) ([]*Geometry, error) {
 		return nil, fmt.Errorf("invalid geometries types")
 	}
 	gs := make([]*Geometry, 0, len(gms))
-	for i, g := range gms {
+	for _, g := range gms {
 		geom := &Geometry{}
 		gm, ok := g.(map[string]interface{})
 		if !ok {
@@ -221,9 +221,9 @@ func unmarshalGeometries(geoms interface{}) ([]*Geometry, error) {
 		if err != nil {
 			return nil, err
 		}
-		gs[i] = geom
+		gs = append(gs, geom)
 	}
-	return nil, nil
+	return gs, nil
 }
 
 type GeoJsonFeature struct {
