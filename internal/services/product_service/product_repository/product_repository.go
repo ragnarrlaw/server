@@ -3,9 +3,9 @@ package productrepository
 import (
 	"context"
 
-	"github.com/raganrrlaw/server/db/database"
-	"github.com/raganrrlaw/server/internal/types/product"
-	"github.com/raganrrlaw/server/internal/types/search"
+	"github.com/ragnarrlaw/server/db/database"
+	"github.com/ragnarrlaw/server/internal/types/product"
+	"github.com/ragnarrlaw/server/internal/types/search"
 )
 
 type ProductRepository interface {
