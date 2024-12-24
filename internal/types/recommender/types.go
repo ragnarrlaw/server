@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	pgtype "github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
-	"github.com/raganrrlaw/server/internal/types/geocode"
+	"github.com/ragnarrlaw/server/internal/types/geocode"
 )
 
 type ListItem struct {
