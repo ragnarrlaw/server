@@ -56,7 +56,7 @@ type StoreProduct struct {
 	PricePerUnit      float64       `json:"pricePerUnit"`
 	Currency          string        `json:"currency"`
 	ListUnitOfMeasure UnitOfMeasure `json:"listUnitOfMeasure"`
-	StockQuantity     int           `json:"stockQuantity"`
+	StockQuantity     StockQuantity `json:"stockQuantity"`
 	CreatedAt         time.Time     `json:"-"`
 	UpdatedAt         time.Time     `json:"-"`
 }
