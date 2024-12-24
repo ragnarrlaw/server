@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/raganrrlaw/server/db/database"
-	"github.com/raganrrlaw/server/internal/types/recommender"
+	"github.com/ragnarrlaw/server/db/database"
+	"github.com/ragnarrlaw/server/internal/types/recommender"
 	uuid "github.com/vgarvardt/pgx-google-uuid/v5"
 )
 
