@@ -39,6 +39,49 @@ type Geometry struct {
 	CRS             map[string]interface{} `json:"crs,omitempty"` // Coordinate Reference System Objects -> leaflet EPSG:3857
 }
 
+/*
+Example marshalled geojson geometry
+
+	{
+		"type": "Point",
+		"coordinates": [100.0, 0.0],
+	}
+*/
+func (g Geometry) MarshalJson() ([]byte, error) {
+	var p struct {
+		Type        GeometryType           `json:"type"`
+		BoundingBox []float64              `json:"bbox,omitempty"`
+		Coordinates interface{}            `json:"coordinates"`
+		CRS         map[string]interface{} `json:"crs,omitempty"`
+	}
+	p.Type = g.Type
+	if len(g.BoundingBox) > 0 {
+		p.BoundingBox = g.BoundingBox
+	}
+
+	if len(g.CRS) > 0 {
+		p.CRS = g.CRS
+	}
+
+	switch g.Type {
+	case PointType:
+		p.Coordinates = g.Point
+	case MultiPointType:
+		p.Coordinates = g.MultiPoint
+	case LineStringType:
+		p.Coordinates = g.LineString
+	case MultiLineString:
+		p.Coordinates = g.MultiLineString
+	case PolygonType:
+		p.Coordinates = g.Polygon
+	case MultiPolygonType:
+		p.Coordinates = g.MultiPolygon
+	case GeometryCollection:
+		p.Coordinates = g.Geometries
+	}
+	return json.Marshal(p)
+}
+
 func (g *Geometry) UnmarshalJSON(b []byte) error {
 	geom := make(map[string]interface{})
 	if err := json.Unmarshal(b, &geom); err != nil {
@@ -227,7 +270,7 @@ func unmarshalGeometries(geoms interface{}) ([]*Geometry, error) {
 }
 
 type GeoJsonFeature struct {
-	Type        string                 `json:"type"`
+	Type        GeometryType           `json:"type"`
 	BoundingBox []float64              `json:"bbox,omitempty"` // "bbox": [minLon, minLat, maxLon, maxLat]
 	Geometry    *Geometry              `json:"geometry"`
 	Properties  map[string]interface{} `json:"properties"`
@@ -235,7 +278,7 @@ type GeoJsonFeature struct {
 }
 
 type GeoJsonFeatureCollection struct {
-	Type        string                 `json:"type"`
+	Type        GeometryType           `json:"type"`
 	BoundingBox []float64              `json:"bbox,omitempty"` // "bbox": [minLon, minLat, maxLon, maxLat]
 	Features    []*GeoJsonFeature      `json:"features"`
 	CRS         map[string]interface{} `json:"crs,omitempty"` // Coordinate Reference System Objects -> leaflet EPSG:3857
