@@ -251,7 +251,7 @@ func (ss *StoreService) GetStoreDiscountHandler(w http.ResponseWriter, r *http.R
 	defer cancel()
 
 	if storeId := r.PathValue("storeId"); storeId != "" {
-		if id, err := uuid.FromBytes([]byte(storeId)); err != nil {
+		if id, err := uuid.Parse(storeId); err != nil {
 			http.Error(w, "store id required", http.StatusBadRequest)
 		} else {
 			if discounts, err := ss.storeRepository.GetStoreDiscounts(ctx, id); err != nil {
@@ -290,7 +290,7 @@ func (ss *StoreService) PostStoreDiscountHandler(w http.ResponseWriter, r *http.
 		if err := json.NewDecoder(r.Body).Decode(payload); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
-			if id, err := uuid.FromBytes([]byte(storeId)); err != nil {
+			if id, err := uuid.Parse(storeId); err != nil {
 				http.Error(w, "invalid store id format", http.StatusBadRequest)
 			} else {
 				if data, err := ss.storeRepository.CreateStoreDiscount(ctx, id, payload); err != nil {
@@ -322,7 +322,7 @@ func (ss *StoreService) UpdateStoreDiscountHandler(w http.ResponseWriter, r *htt
 		if err := json.NewDecoder(r.Body).Decode(payload); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
-			if id, err := uuid.FromBytes([]byte(storeId)); err != nil {
+			if id, err := uuid.Parse(storeId); err != nil {
 				http.Error(w, "invalid store id format", http.StatusBadRequest)
 			} else {
 				if data, err := ss.storeRepository.UpdateStoreDiscount(ctx, id, payload); err != nil {
@@ -351,12 +351,12 @@ func (ss *StoreService) DeleteStoreDiscountHandler(w http.ResponseWriter, r *htt
 
 	if storeId := r.URL.Query().Get("storeId"); storeId != "" {
 		if discountIds := r.URL.Query()["discountIds"]; len(discountIds) > 0 {
-			if id, err := uuid.FromBytes([]byte(storeId)); err != nil {
+			if id, err := uuid.Parse(storeId); err != nil {
 				http.Error(w, "invalid store id format", http.StatusBadRequest)
 			} else {
 				ids := make([]uuid.UUID, 0, len(discountIds))
 				for i, id := range discountIds {
-					if uuid, err := uuid.FromBytes([]byte(id)); err != nil {
+					if uuid, err := uuid.Parse(id); err != nil {
 						http.Error(w, "invalid discount id format", http.StatusBadRequest)
 					} else {
 						ids[i] = uuid
