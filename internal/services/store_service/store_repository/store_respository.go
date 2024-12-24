@@ -262,9 +262,9 @@ func (repo *StoreRepo) SearchStores(ctx context.Context, params *store.FilterCri
 		argIndex++
 	}
 
-	if params.Feature.Type != "" {
+	if params.Feature.Type == geocode.FeatureType {
 		if params.Feature.Geometry != nil {
-			if gj, err := json.Marshal(params.Feature.Geometry); err != nil {
+			if gj, err := json.Marshal(*params.Feature.Geometry); err != nil {
 				return nil, err
 			} else {
 				switch params.Feature.Geometry.Type {
@@ -536,7 +536,7 @@ func (repo *StoreRepo) DeleteStoreProducts(ctx context.Context, storeId string, 
 		WHERE store_id = $1 AND product_id = ANY($2)
 	`
 
-	if _, err := repo.storage.Pool.Exec(ctx, query); err != nil {
+	if _, err := repo.storage.Pool.Exec(ctx, query, storeId, productIds); err != nil {
 		return err
 	}
 
