@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/fatih/color"
-	"github.com/raganrrlaw/server/internal/types/search"
+	"github.com/ragnarrlaw/server/internal/types/search"
 )
 
 type Middleware func(http.Handler) http.Handler
