@@ -3,7 +3,7 @@ package processing
 import (
 	"fmt"
 
-	"github.com/raganrrlaw/server/internal/types/product"
+	"github.com/ragnarrlaw/server/internal/types/product"
 )
 
 func UnitConverter(from product.UnitOfMeasure, to product.UnitOfMeasure) (float64, error) {
