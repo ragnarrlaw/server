@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raganrrlaw/server/internal/types/geocode"
+	"github.com/ragnarrlaw/server/internal/types/geocode"
 )
 
 type Store struct {
@@ -34,8 +34,22 @@ type StoreStat struct {
 	NumberOfOutOfStockProducts   int           `json:"numberOfOutOfStockProducts"`
 }
 
+type StoreDiscount struct {
+	Id             uuid.UUID `json:"id"`
+	StoreId        uuid.UUID `json:"storeId"`
+	Discount       string    `json:"discount"`
+	ApplicableTags []string  `json:"applicableTags"`
+	StartDate      time.Time `json:"startDate"`
+	EndDate        time.Time `json:"endDate"`
+	CreatedAt      time.Time `json:"-"`
+	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
 type FilterCriteria struct {
 	Name    string                 `json:"name"`
 	Ids     []string               `json:"ids"`
 	Feature geocode.GeoJsonFeature `json:"feature"`
+	Radius  float64                `json:"radius"`
+	Limit   int                    `json:"limit"`
+	Offset  int                    `json:"offset"`
 }
