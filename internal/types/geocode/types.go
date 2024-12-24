@@ -14,6 +14,13 @@ func (p *Point) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+type GeoFeatureType string
+
+const (
+	FeatureType           GeoFeatureType = "Feature"
+	FeatureCollectionType GeoFeatureType = "FeatureCollection"
+)
+
 type GeometryType string
 
 const (
@@ -47,7 +54,7 @@ Example marshalled geojson geometry
 		"coordinates": [100.0, 0.0],
 	}
 */
-func (g Geometry) MarshalJson() ([]byte, error) {
+func (g Geometry) MarshalJSON() ([]byte, error) {
 	var p struct {
 		Type        GeometryType           `json:"type"`
 		BoundingBox []float64              `json:"bbox,omitempty"`
@@ -270,7 +277,7 @@ func unmarshalGeometries(geoms interface{}) ([]*Geometry, error) {
 }
 
 type GeoJsonFeature struct {
-	Type        GeometryType           `json:"type"`
+	Type        GeoFeatureType         `json:"type"`
 	BoundingBox []float64              `json:"bbox,omitempty"` // "bbox": [minLon, minLat, maxLon, maxLat]
 	Geometry    *Geometry              `json:"geometry"`
 	Properties  map[string]interface{} `json:"properties"`
@@ -278,7 +285,7 @@ type GeoJsonFeature struct {
 }
 
 type GeoJsonFeatureCollection struct {
-	Type        GeometryType           `json:"type"`
+	Type        GeoFeatureType         `json:"type"`
 	BoundingBox []float64              `json:"bbox,omitempty"` // "bbox": [minLon, minLat, maxLon, maxLat]
 	Features    []*GeoJsonFeature      `json:"features"`
 	CRS         map[string]interface{} `json:"crs,omitempty"` // Coordinate Reference System Objects -> leaflet EPSG:3857
