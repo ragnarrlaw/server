@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	productrepository "github.com/raganrrlaw/server/internal/services/product_service/product_repository"
-	"github.com/raganrrlaw/server/internal/types/search"
+	productrepository "github.com/ragnarrlaw/server/internal/services/product_service/product_repository"
+	"github.com/ragnarrlaw/server/internal/types/search"
 )
 
 type ProductService struct {
