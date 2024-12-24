@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	database "github.com/raganrrlaw/server/db/database"
-	"github.com/raganrrlaw/server/internal/types/search"
-	"github.com/raganrrlaw/server/internal/types/user"
+	database "github.com/ragnarrlaw/server/db/database"
+	"github.com/ragnarrlaw/server/internal/types/search"
+	"github.com/ragnarrlaw/server/internal/types/user"
 )
 
 type UserRepository interface {

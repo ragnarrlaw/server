@@ -12,9 +12,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib" // this call registers the pgx driver
 	"github.com/pressly/goose/v3"
-	"github.com/raganrrlaw/server/config"
-	"github.com/raganrrlaw/server/db/database"
-	_ "github.com/raganrrlaw/server/db/migrations" // this calls the init functions in the files
+	"github.com/ragnarrlaw/server/config"
+	"github.com/ragnarrlaw/server/db/database"
+	_ "github.com/ragnarrlaw/server/db/migrations" // this calls the init functions in the files
 	pgxuuid "github.com/vgarvardt/pgx-google-uuid/v5"
 )
 

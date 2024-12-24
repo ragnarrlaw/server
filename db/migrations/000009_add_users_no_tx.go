@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/pressly/goose/v3"
-	"github.com/raganrrlaw/server/internal/utils/hash"
+	"github.com/ragnarrlaw/server/internal/utils/hash"
 )
 
 func init() {

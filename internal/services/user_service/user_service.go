@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	userrepository "github.com/raganrrlaw/server/internal/services/user_service/user_repository"
-	"github.com/raganrrlaw/server/internal/types/search"
+	userrepository "github.com/ragnarrlaw/server/internal/services/user_service/user_repository"
+	"github.com/ragnarrlaw/server/internal/types/search"
 )
 
 type UserService struct {

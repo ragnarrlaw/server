@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	recommenderrepository "github.com/raganrrlaw/server/internal/services/recommender_service/recommender_repository"
-	"github.com/raganrrlaw/server/internal/types/recommender"
-	"github.com/raganrrlaw/server/internal/types/search"
+	recommenderrepository "github.com/ragnarrlaw/server/internal/services/recommender_service/recommender_repository"
+	"github.com/ragnarrlaw/server/internal/types/recommender"
+	"github.com/ragnarrlaw/server/internal/types/search"
 )
 
 type RecommenderService struct {
