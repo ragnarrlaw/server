@@ -8,6 +8,7 @@ import (
 	pgtype "github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/ragnarrlaw/server/internal/types/geocode"
+	"github.com/ragnarrlaw/server/internal/types/product"
 )
 
 type ListItem struct {
@@ -31,6 +32,7 @@ type Recommendation struct {
 	Address        string               `json:"address"`
 	Location       geocode.Point        `json:"location"`
 	Distance       float64              `json:"distance"`
+	Discounts      []string             `json:"discounts"`
 	TotalCost      float64              `json:"totalCost"`
 	DiscountedCost float64              `json:"discountedCost"`
 	Items          []RecommendationItem `json:"items"`
@@ -47,15 +49,17 @@ func RegisterRecommendationType(ctx context.Context, conn *pgx.Conn) error {
 }
 
 type RecommendationItem struct {
-	ProductId             uuid.UUID `json:"productId"`
-	Name                  string    `json:"productName"`
-	Quantity              string    `json:"quantity"`
-	PricePerUnit          float64   `json:"pricePerUnit"`
-	ListedUnitOfMeasure   string    `json:"listedUnitOfMeasure"`
-	StockQuantity         string    `json:"stockQuantity"`
-	ImageUrl              string    `json:"imageUrl"`
-	StandardUnitOfMeasure string    `json:"standardUnitOfMeasure"`
-	DiscountedPrice       float64   `json:"discountedProductPrice"`
+	ProductId             uuid.UUID             `json:"productId"`
+	Name                  string                `json:"productName"`
+	Quantity              string                `json:"quantity"`
+	PricePerUnit          float64               `json:"pricePerUnit"`
+	ListedUnitOfMeasure   product.UnitOfMeasure `json:"listedUnitOfMeasure"`
+	StockQuantity         string                `json:"stockQuantity"`
+	ImageUrl              string                `json:"imageUrl"`
+	StandardUnitOfMeasure product.UnitOfMeasure `json:"standardUnitOfMeasure"`
+	Cost                  float64               `json:"cost"`
+	PurchaseQuantity      float64               `json:"purchaseQuantity"`
+	DiscountedPrice       float64               `json:"discountedProductPrice"`
 }
 
 func RegisterRecommendationItemType(ctx context.Context, conn *pgx.Conn) error {
