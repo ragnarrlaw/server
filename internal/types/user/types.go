@@ -19,8 +19,13 @@ type User struct {
 }
 
 type UserPreferences struct {
-	UserId    uuid.UUID `json:"-"`
-	Items     string    `json:"items"`
+	UserId      uuid.UUID `json:"-"`
+	Preferences struct {
+		PaymentMethod       string      `json:"paymentMethod"`
+		DigitalPaymentCards []string    `json:"digitalPaymentCards"`
+		PreferredStores     []uuid.UUID `json:"preferredStores"`
+		PreferredBrands     []uuid.UUID `json:"preferredBrands"`
+	} `json:"preferences"`
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"UpdatedAt"`
 }
@@ -28,7 +33,16 @@ type UserPreferences struct {
 type PreviousUserRecommendations struct {
 	Id              uuid.UUID `json:"id"`
 	UserId          uuid.UUID `json:"-"`
-	Recommendations string    `json:"recommendations"`
-	CreatedAt       time.Time `json:"-"`
-	UpdatedAt       time.Time `json:"-"`
+	Recommendations []struct {
+		StoreId  uuid.UUID `json:"storeId"`
+		Products []struct {
+			ProductId               uuid.UUID `json:"productId"`
+			Quantity                int       `json:"quantity"`
+			OriginalPurchasePrice   float64   `json:"purchasePrice"`
+			DiscountedPurchasePrice float64   `json:"discountedPurchasePrice"`
+		} `json:"items"`
+		TotalPurchasePrice float64 `json:"totalPurchasePrice"`
+	} `json:"recommendations"`
+	CreatedAt time.Time `json:"-"`
+	UpdatedAt time.Time `json:"-"`
 }
