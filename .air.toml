@@ -1,0 +1,7 @@
+[build]
+cmd = "make run"
+include_dir = ["cmd", "internal", "config", "db"]
+log = "stdout"
+
+[run]
+cmd = "./bin/api"
