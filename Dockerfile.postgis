@@ -1,0 +1,8 @@
+FROM postgis/postgis:latest
+
+RUN apt-get update && \
+    apt-get install -y \
+    libcgal-dev \
+    libgmp3-dev \
+    postgresql-16-cron \
+    && rm -rf /var/lib/apt/lists/*
