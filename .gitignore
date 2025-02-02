@@ -28,3 +28,8 @@ go.work.sum
 # editor
 .vscode
 
+#postgres
+postgres/data
+
+# osrm
+osrm
